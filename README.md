@@ -406,10 +406,4 @@ If `"default-runtime": "nvidia"` in set in `/etc/docker/daemon.json` and want to
 
 # 3. Version History
 
-- 20241219: First Ubuntu 24.04 based release (with Python 3.12), with support for CUDA 12.5.1, TensorFlow 2.18.0, PyTorch 2.5.1 and OpenCV 4.10.0 (and a Dockerfile to build with TensorRT)
-- 20241125: Release with support for CUDA 12.5.1, TensorFlow 2.18.0, PyTorch 2.5.1 and OpenCV 4.10.0 (last Ubuntu 22.04 based version, with Python 3.10)
-- 20240421: Release with support for CUDA 12.3.2, TensorFlow 2.16.1, PyTorch 2.2.2 and OpenCV 4.9.0
-- 20231201: Release with support for CUDA 11.8.0, TensorFlow 2.14.1, PyToch 2.1.1 and OpenCV 4.8.0
-- 20231120: Initial Release, with support for CUDA 11.8.0, TensorFlow 2.12.0, PyTorch 2.0.1 and OpenCV 4.7.0.
-- November 2023: Preparation for public release.
-- June 2023: engineered to support clean `Dockerfile` generation, supporting the same versions as 20231120 releases.
+
