@@ -252,7 +252,7 @@ def return_BUILD_OPENCV(opencv_version, cuda_version, indir, args):
     tmp = replace_line(tmp, "ENV CoreAI_OPENCV_VERSION", f"ENV CoreAI_OPENCV_VERSION={opencv_version}")
 
     if cuda_version is not None:
-        tmp = replace_line(tmp, "ENV CoreAI_OPENCV_CUDA=", f"ENV CoreAI_OPENCV_CUDA=\"-D WITH_CUDA=ON -D CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda -D CMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs -D CUDA_FAST_MATH=1 -D WITH_CUBLAS=1 -D WITH_NVCUVID=1 -DCUDA_ARCH_BIN={args.dnn_arch} -DCUDA_ARCH_PTX={args.dnn_arch}\"")
+        tmp = replace_line(tmp, "ENV CoreAI_OPENCV_CUDA=", f"ENV CoreAI_OPENCV_CUDA=\"-DWITH_CUDA=1 -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda -DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs -DCUDA_FAST_MATH=1 -DWITH_CUBLAS=1 -DWITH_NVCUVENC=0 -DWITH_NVCUVID=0 -DCUDA_ARCH_BIN={args.dnn_arch} -DCUDA_ARCH_PTX={args.dnn_arch}\"")
 
     if "unredistributable" in args.nonfree:
         tmp = replace_line(tmp, "ENV CoreAI_OPENCV_NONFREE=", f"ENV CoreAI_OPENCV_NONFREE=\"-DOPENCV_ENABLE_NONFREE=1\"")
