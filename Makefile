@@ -77,7 +77,7 @@ STABLE_OPENCV4=4.11.0
 # Note: GPU extensions are added directly in the Dockerfile
 CoreAI_FFMPEG_VERSION=7.1.1
 # https://github.com/FFmpeg/nv-codec-headers/releases
-CoreAI_FFMPEG_NVCODEC="13.0.19.0"
+CoreAI_FFMPEG_NVCODEC="12.2.72.0" 
 
 # TF2 CUDA & CUDNN
 # According to https://github.com/tensorflow/tensorflow/tags
