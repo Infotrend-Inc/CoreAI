@@ -36,6 +36,45 @@ verb_echo() {
   fi
 }
 
+save_env() {
+  tosave=$1
+  verb_echo "-- Saving environment variables to $tosave"
+  env | sort > "$tosave"
+}
+
+load_env() {
+  tocheck=$1
+  overwrite_if_different=$2
+  ignorelist="HOME PWD USER SHLVL TERM OLDPWD SHELL _ SUDO_COMMAND HOSTNAME LOGNAME MAIL SUDO_GID SUDO_UID SUDO_USER"
+  if [ -f "$tocheck" ]; then
+    verb_echo "-- Loading environment variables from $tocheck (overwrite existing: $overwrite_if_different) (ignorelist: $ignorelist)"
+    while IFS='=' read -r key value; do
+      doit=false
+      # checking if the key is in the ignorelist
+      for i in $ignorelist; do
+        if [ "A$key" = "A$i" ]; then doit=ignore; break; fi
+      done
+      if [ "A$doit" = "Aignore" ]; then continue; fi
+
+      if [ -z "${!key}" ]; then
+        verb_echo "  ++ Setting environment variable $key [$value]"
+        doit=true
+      elif [ "$overwrite_if_different" = true ]; then
+        if [ "${!key}" != "$value" ]; then
+          verb_echo "  @@ Overwriting environment variable $key [${!key}] -> [$value]"
+          doit=true
+        else
+          verb_echo "  == Environment variable $key [$value] already set and value is unchanged"
+        fi
+      fi
+      if [ "$doit" = true ]; then
+        export "$key=$value"
+      fi
+    done < "$tocheck"
+  fi
+}
+
+
 whoami=`whoami`
 script_dir=$(dirname $0)
 script_name=$(basename $0)
@@ -81,6 +120,9 @@ if [ "A${whoami}" == "Acoreaitoo" ]; then
   fi
   sudo chown -R ${WANTED_UID}:${WANTED_GID} /home/coreai || error_exit "Failed to set owner of /home/coreai"
 
+  # save the current environment
+  save_env /tmp/.CoreAItoo-env
+
   # restart the script as coreai set with the correct UID/GID this time
   verb_echo "-- Restarting as coreai user with UID ${WANTED_UID} GID ${WANTED_GID}"
   sudo su coreai $script_fullname || error_exit "subscript failed"
@@ -95,6 +137,12 @@ if [ "$WANTED_UID" != "$new_uid" ]; then error_exit "coreai MUST be running as U
 
 # We are therefore running as coreai
 verb_echo ""; verb_echo "== Running as coreai"
+
+# Load environment variables one by one if they do not exist from /tmp/.CoreAItoo-env
+it=/tmp/.CoreAItoo-env
+if [ ! -f $it ]; then error_exit "Failed to load environment variables from $it"; fi
+echo "-- Loading not already set environment variables from $it"
+load_env $it true
 
 ########## 'coreai' specific section below
 if [ -f /tmp/CoreAI-run.sh ]; then
