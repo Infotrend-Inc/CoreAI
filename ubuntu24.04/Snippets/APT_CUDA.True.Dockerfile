@@ -5,7 +5,7 @@ RUN apt-get install -y --no-install-recommends \
   && apt-get clean
 
 # Add libEGL & Vuulkan ICD loaders and libraries
-RUN apt install -y libglvnd0 libglvnd-dev libegl1-mesa-dev libvulkan1 libvulkan-dev ffmpeg \
+RUN apt install -y libglvnd0 libglvnd-dev libegl1-mesa-dev libvulkan1 libvulkan-dev \
     && apt-get clean \
     && mkdir -p /usr/share/glvnd/egl_vendor.d \
     && echo '{"file_format_version":"1.0.0","ICD":{"library_path":"libEGL_nvidia.so.0"}}' > /usr/share/glvnd/egl_vendor.d/10_nvidia.json \
