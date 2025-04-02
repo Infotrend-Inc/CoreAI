@@ -153,7 +153,7 @@ RUN mv /usr/lib/python3.12/EXTERNALLY-MANAGED /usr/lib/python3.12/EXTERNALLY-MAN
 # Install Python tools (for buiding) 
 RUN pip3 --trusted-host pypi.org --trusted-host files.pythonhosted.org install -U --ignore-installed \
   # Base
-    cmake \
+    "cmake>=3.20,<4.0" \
     future \
     mkl \
     mkl-include \
