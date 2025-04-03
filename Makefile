@@ -5,11 +5,10 @@ SHELL := /bin/bash
 
 CoreAI_BASENAME="coreai-"
 
-# Release to match data of Dockerfile and follow YYYYMMDD pattern
-CoreAI_RELEASE=202503wip
+# Release to match data of Dockerfile and follow YY + Alpha (lowercase, version number for that year) + Revision (number) pattern
+CoreAI_RELEASE=25a01
 BUILDX_RELEASE=${CoreAI_RELEASE}
 # Attempt to use cache for the buildx images, change value to create clean buildx base
-BUILDX_RELEASE=202503wip
 
 # The default is not to build OpenCV non-free or build FFmpeg with libnpp, as those would make the images unredistributable 
 # Replace "free" by "unredistributable" if you need to use those for a personal build
@@ -35,8 +34,8 @@ OVERWRITE="yes"
 # "" means to use "pip" version of TensorFlow and PyTorch
 # "-built" means to build from sources
 # the value will be added to the container name to differentiate the versions
-#PREFER_PIPINSTALL="-built"
-PREFER_PIPINSTALL=""
+PREFER_PIPINSTALL="-built"
+#PREFER_PIPINSTALL=""
 
 
 # Use "yes" below to force some tools check post build (recommended)
@@ -59,7 +58,7 @@ STABLE_CUDNN=9.5.1.17-1
 
 # TensortRT:
 # check available version: apt-cache madison  tensorrt-dev
-TENSORRT="-TensorRT"
+TENSORRT="-tensorrt"
 
 # CUDNN needs 5.3 at minimum, extending list from https://en.wikipedia.org/wiki/CUDA#GPUs_supported 
 # Skipping Tegra, Jetson, ... (ie not desktop/server GPUs) from this list
@@ -509,17 +508,17 @@ docker_tag_push_core:
 # - Update the README.md file with the new release tag + version history
 # - Commit and push the changes to GitHub (in the branch created at the beginning)
 # - On Github, "Open a pull request", 
-#   use the value of CoreAI_RELEASE for the release name (ie the YYYYMMDD value)
+#   use the value of CoreAI_RELEASE for the release name (ie the YY + Alpha + Revision value)
 #   add PR modifications as a summry of the content of the commits,
 #   create the PR, add a self-approve message, merge and delete the branch
 # - on the build system, checkout main and pull the changes
 #  % git checkout main
 #  % git pull
 # - delete the temporary branch (named after the CoreAI_RELEASE value)
-#  % git branch -d YYYYMMDD
+#  % git branch -d ${CoreAI_RELEASE}
 # - Tag the release on GitHub
-#  % git tag YYYYMMDD
-#  % git push origin YYYYMMDD
-# - Create a release on GitHub using the YYYYMMDD tag, add the release notes, and publish
+#  % git tag ${CoreAI_RELEASE}
+#  % git push origin ${CoreAI_RELEASE}
+# - Create a release on GitHub using the ${CoreAI_RELEASE} tag, add the release notes, and publish
 # - delete the created docker builder (find its name then REPLACE it)
 #  % make buildx_rm
