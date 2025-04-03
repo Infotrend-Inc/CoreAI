@@ -104,10 +104,10 @@ TAG_RELEASE="infotrend/"
 
 ##### CUDA [ _ Tensorflow ]  [ _ PyTorch ] _ OpenCV
 CTO_PIP  =${CoreAI_RELEASE}-cto-${STABLE_CUDA}_${STABLE_TF2}_${STABLE_OPENCV4}
-CTO_BLT  =${CoreAI_RELEASE}-cto-${STABLE_CUDA}_${STABLE_TF2}_${STABLE_OPENCV4}-built
+#CTO_BLT  =${CoreAI_RELEASE}-cto-${STABLE_CUDA}_${STABLE_TF2}_${STABLE_OPENCV4}-built
 
 CPO_PIP  =${CoreAI_RELEASE}-cpo-${STABLE_CUDA}_${STABLE_TORCH}_${STABLE_OPENCV4}
-CPO_BLT  =${CoreAI_RELEASE}-cpo-${STABLE_CUDA}_${STABLE_TORCH}_${STABLE_OPENCV4}-built
+#CPO_BLT  =${CoreAI_RELEASE}-cpo-${STABLE_CUDA}_${STABLE_TORCH}_${STABLE_OPENCV4}-built
 
 CTPO_PIP =${CoreAI_RELEASE}-ctpo-${STABLE_CUDA}_${STABLE_TF2}_${STABLE_TORCH}_${STABLE_OPENCV4}
 CTPO_BLT =${CoreAI_RELEASE}-ctpo-${STABLE_CUDA}_${STABLE_TF2}_${STABLE_TORCH}_${STABLE_OPENCV4}-built
@@ -119,10 +119,10 @@ CTPO_BLT_TRT =${CoreAI_RELEASE}-ctpo-${STABLE_CUDA}_${STABLE_TF2}_${STABLE_TORCH
 
 ##### [ Tensorflow | PyTorch ] _ OpenCV (aka TPO)
 TO_PIP =${CoreAI_RELEASE}-to-${STABLE_TF2}_${STABLE_OPENCV4}
-TO_BLT =${CoreAI_RELEASE}-to-${STABLE_TF2}_${STABLE_OPENCV4}-built
+#TO_BLT =${CoreAI_RELEASE}-to-${STABLE_TF2}_${STABLE_OPENCV4}-built
 
 PO_PIP =${CoreAI_RELEASE}-po-${STABLE_TORCH}_${STABLE_OPENCV4}
-PO_BLT =${CoreAI_RELEASE}-po-${STABLE_TORCH}_${STABLE_OPENCV4}-built
+#PO_BLT =${CoreAI_RELEASE}-po-${STABLE_TORCH}_${STABLE_OPENCV4}-built
 
 TPO_PIP=${CoreAI_RELEASE}-tpo-${STABLE_TF2}_${STABLE_TORCH}_${STABLE_OPENCV4}
 TPO_BLT=${CoreAI_RELEASE}-tpo-${STABLE_TF2}_${STABLE_TORCH}_${STABLE_OPENCV4}-built
@@ -150,17 +150,17 @@ all:
 	@echo ""
 	@echo "*** Available CoreAI Docker images to be built (make targets):"
 	@echo ""
-	@echo "  pip for CPU: pip_tpo_all:"
+	@echo "  pip_tpo_all -- pip for CPU:"
 	@echo "    pip_to OR pip_po OR pip_tpo : "; echo -n "      "; echo ${TPO_ALL_PIP} | sed -e 's/ /\n      /g'
-	@echo "  pip for GPU: pip_ctpo_all:"
+	@echo "  pip_ctpo_all -- pip for GPU:"
 	@echo "    pip_cto OR pip_cpo OR pip_ctpo : "; echo -n "      "; echo ${CTPO_ALL_PIP} | sed -e 's/ /\n      /g'
 	@echo ""
-	@echo "  built for CPU: blt_tpo_all:"
-	@echo "    blt_to OR blt_po OR blt_tpo : "; echo -n "      "; echo ${TPO_ALL_BLT} | sed -e 's/ /\n      /g'
-	@echo "  built for GPU: blt_ctpo_all:"
-	@echo "    blt_cto OR blt_cpo OR blt_ctpo : "; echo -n "      "; echo ${CTPO_ALL_BLT} | sed -e 's/ /\n      /g'
+	@echo "  blt_tpo_all -- built for CPU:"
+	@echo "    blt_tpo : "; echo -n "      "; echo ${TPO_ALL_BLT} | sed -e 's/ /\n      /g'
+	@echo "  blt_ctpo_all -- built for GPU:"
+	@echo "    blt_ctpo : "; echo -n "      "; echo ${CTPO_ALL_BLT} | sed -e 's/ /\n      /g'
 	@echo ""
-	@echo "  blt_ctpo_tensorrt (built with TensorRT support, requires GPU)"
+	@echo "  blt_ctpo_tensorrt -- built with TensorRT support:"
 	@echo -n "      "; echo ${CTPO_BLT_TRT} | sed -e 's/ /\n      /g'
 	@echo ""
 	@echo "  build_all: build ALL previously listed targets"
@@ -169,19 +169,19 @@ all:
 build_all: ${TPO_ALL_PIP} ${TPO_ALL_BLD} ${CTPO_ALL_PIP} ${CTPO_ALL_BLD} ${CTPO_BLT_TRT}
 
 pip_to: ${TO_PIP}
-bld_to: ${TO_BLD}
+#bld_to: ${TO_BLD}
 
 pip_po: ${PO_PIP}
-bld_po: ${PO_BLD}
+#bld_po: ${PO_BLD}
 
 pip_tpo: ${TPO_PIP}
 bld_tpo: ${TPO_BLD}
 
 pip_cto: ${CTO_PIP}
-bld_cto: ${CTO_BLD}
+#bld_cto: ${CTO_BLD}
 
 pip_cpo: ${CPO_PIP}
-bld_cpo: ${CPO_BLD}
+#bld_cpo: ${CPO_BLD}
 
 pip_ctpo: ${CTPO_PIP}
 bld_ctpo: ${CTPO_BLD}
