@@ -166,7 +166,7 @@ all:
 	@echo "  build_all: build ALL previously listed targets"
 
 ## special command to build all targets
-build_all: ${TPO_ALL_PIP} ${TPO_ALL_BLD} ${CTPO_ALL_PIP} ${CTPO_ALL_BLD} ${CTPO_BLT_TRT}
+build_all: ${TPO_ALL_PIP} ${CTPO_ALL_PIP} ${TPO_ALL_BLD} ${CTPO_ALL_BLD} ${CTPO_BLT_TRT}
 
 pip_to: ${TO_PIP}
 #bld_to: ${TO_BLD}
