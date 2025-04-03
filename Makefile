@@ -3,7 +3,7 @@ SHELL := /bin/bash
 .PHONY: all build_all actual_build build_prep pre_build post_build
 .NOTPARALLEL:
 
-CoreAI_BASENAME="coreai-"
+CoreAI_BASENAME="coreai"
 
 # Release to match data of Dockerfile and follow YY + Alpha (lowercase, version number for that year) + Revision (number) pattern
 CoreAI_RELEASE=25a01
@@ -22,21 +22,9 @@ CoreAI_NUMPROC := $(shell nproc --all)
 DOCKER_BUILD_ARGS=
 #DOCKER_BUILD_ARGS="--no-cache"
 
-# Use "yes" below before a multi build to have docker pull the base images using "make build_all" 
-DOCKERPULL=""
-#DOCKERPULL="yes"
-
 # Use "yes" below to create a new destination directory
 # Because the Dockerfile should be the same (from a git perspective) when overwritten, this should not be a problem; and if different, we want to know 
 OVERWRITE="yes"
-
-# Only two values are allowed: "" or "b". 
-# "" means to use "pip" version of TensorFlow and PyTorch
-# "-built" means to build from sources
-# the value will be added to the container name to differentiate the versions
-PREFER_PIPINSTALL="-built"
-#PREFER_PIPINSTALL=""
-
 
 # Use "yes" below to force some tools check post build (recommended)
 # this will use docker run [...] --gpus all and extend the TF build log
@@ -114,30 +102,36 @@ TAG_RELEASE="infotrend/"
 
 ##########
 
-##### CUDA [ _ Tensorflow ]  [ _ PyTorch ] _ OpenCV (aka CoreAI)
-CTPO_BUILDALL_T  =cto-${STABLE_CUDA}_${STABLE_TF2}_${STABLE_OPENCV4}
+##### CUDA [ _ Tensorflow ]  [ _ PyTorch ] _ OpenCV
+CTO_PIP  =${CoreAI_RELEASE}-cto-${STABLE_CUDA}_${STABLE_TF2}_${STABLE_OPENCV4}
+CTO_BLT  =${CoreAI_RELEASE}-cto-${STABLE_CUDA}_${STABLE_TF2}_${STABLE_OPENCV4}-built
 
-CTPO_BUILDALL_P  =cpo-${STABLE_CUDA}_${STABLE_TORCH}_${STABLE_OPENCV4}
+CPO_PIP  =${CoreAI_RELEASE}-cpo-${STABLE_CUDA}_${STABLE_TORCH}_${STABLE_OPENCV4}
+CPO_BLT  =${CoreAI_RELEASE}-cpo-${STABLE_CUDA}_${STABLE_TORCH}_${STABLE_OPENCV4}-built
 
-CTPO_BUILDALL_TP =ctpo-${STABLE_CUDA}_${STABLE_TF2}_${STABLE_TORCH}_${STABLE_OPENCV4}
+CTPO_PIP =${CoreAI_RELEASE}-ctpo-${STABLE_CUDA}_${STABLE_TF2}_${STABLE_TORCH}_${STABLE_OPENCV4}
+CTPO_BLT =${CoreAI_RELEASE}-ctpo-${STABLE_CUDA}_${STABLE_TF2}_${STABLE_TORCH}_${STABLE_OPENCV4}-built
 
-CTPO_BUILDALL=${CTPO_BUILDALL_T} ${CTPO_BUILDALL_P} ${CTPO_BUILDALL_TP}
+CTPO_ALL_PIP=${CTO_PIP} ${CPO_PIP} ${CTPO_PIP}
+CTPO_ALL_BLT=${CTO_BLT} ${CPO_BLT} ${CTPO_BLT}
+
+CTPO_BLT_TRT =${CoreAI_RELEASE}-ctpo-${STABLE_CUDA}_${STABLE_TF2}_${STABLE_TORCH}_${STABLE_OPENCV4}-built-tensorrt
 
 ##### [ Tensorflow | PyTorch ] _ OpenCV (aka TPO)
-TPO_BUILDALL_T =to-${STABLE_TF2}_${STABLE_OPENCV4}
+TO_PIP =${CoreAI_RELEASE}-to-${STABLE_TF2}_${STABLE_OPENCV4}
+TO_BLT =${CoreAI_RELEASE}-to-${STABLE_TF2}_${STABLE_OPENCV4}-built
 
-TPO_BUILDALL_P =po-${STABLE_TORCH}_${STABLE_OPENCV4}
+PO_PIP =${CoreAI_RELEASE}-po-${STABLE_TORCH}_${STABLE_OPENCV4}
+PO_BLT =${CoreAI_RELEASE}-po-${STABLE_TORCH}_${STABLE_OPENCV4}-built
 
-TPO_BUILDALL_TP=tpo-${STABLE_TF2}_${STABLE_TORCH}_${STABLE_OPENCV4}
+TPO_PIP=${CoreAI_RELEASE}-tpo-${STABLE_TF2}_${STABLE_TORCH}_${STABLE_OPENCV4}
+TPO_BLT=${CoreAI_RELEASE}-tpo-${STABLE_TF2}_${STABLE_TORCH}_${STABLE_OPENCV4}-built
 
-TPO_BUILDALL=${TPO_BUILDALL_T} ${TPO_BUILDALL_P} ${TPO_BUILDALL_TP}
+TPO_ALL_PIP=${TO_PIP} ${PO_PIP} ${TPO_PIP}
+TPO_ALL_BLT=${TO_BLT} ${PO_BLT} ${TPO_BLT}
 
 # For CPU builds (if GPU mode is enabled), we will use NVIDIA_VISIBLE_DEVICES=void as detailed in
 # https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/docker-specialized.html
-
-##### Jupyter Notebook ready based on TPO & CTPO
-TPO_JUP=j-tpo-${STABLE_TF2}_${STABLE_TORCH}_${STABLE_OPENCV4}
-CTPO_JUP=j-ctpo-${STABLE_CUDA}_${STABLE_TF2}_${STABLE_TORCH}_${STABLE_OPENCV4}
 
 ## By default, provide the list of build targets
 all:
@@ -147,60 +141,80 @@ all:
 	@echo "**** Docker Runtime: ${CHECK_DOCKER_RUNTIME}"
 	@echo "  To switch between GPU/CPU: add/remove "'"default-runtime": "nvidia"'" in /etc/docker/daemon.json then run: sudo systemctl restart docker"
 	@echo ""
-	@echo "  PREFER_PIPINSTALL: ${PREFER_PIPINSTALL} (\"b\" for build, \"\" for pip)"
-	@echo ""
-	@echo "  c=cuda t=tensorflow p=pytorch o=opencv"
+	@echo " Tag naming convention: [CoreAI_Release] - [COMPONENTS] - [[CUDA_version _]? [Tensorflow_version _]?  [PyTorch_version _]? [OpenCV_version]] [-tensorrt] [-built]"
+	@echo "   CoreAI_Release: ${CoreAI_RELEASE} ( YY + release letter (a, b, ...) for given year) + release revision"
+	@echo "   Components: c=cuda t=tensorflow p=pytorch o=opencv"
+	@echo "   Versions: versions of the selected components, separated by underscores"
+	@echo "   TensorRT support: requires GPU and \"-built\""
+	@echo "   \"-built\" for built TensorFlow/PyTorch, \"\" for pip installation"
 	@echo ""
 	@echo "*** Available CoreAI Docker images to be built (make targets):"
-	@echo "  build_tpo (requires CPU Docker runtime):"
-	@echo "    to OR po OR tpo (aka TPO, for CPU): "; echo -n "      "; echo ${TPO_BUILDALL} | sed -e 's/ /\n      /g'
-	@echo "  build_ctpo (requires GPU Docker runtime):"
-	@echo "    cto OR cpo OR ctpo (aka CoreAI, for NVIDIA GPU): "; echo -n "      "; echo ${CoreAI_BUILDALL} | sed -e 's/ /\n      /g'
-	@echo "  build_ctpo_tensorrt (requires GPU Docker runtime):"
-	@echo "    ctpo (aka CoreAI, for NVIDIA GPU with TensorRT): same as ctpo but installing TensorRT libraries"; echo "      Note:TensorRT is not supported by TensorFlow since 2.18.0"
 	@echo ""
+	@echo "  pip for CPU: pip_tpo_all:"
+	@echo "    pip_to OR pip_po OR pip_tpo : "; echo -n "      "; echo ${TPO_ALL_PIP} | sed -e 's/ /\n      /g'
+	@echo "  pip for GPU: pip_ctpo_all:"
+	@echo "    pip_cto OR pip_cpo OR pip_ctpo : "; echo -n "      "; echo ${CTPO_ALL_PIP} | sed -e 's/ /\n      /g'
+	@echo ""
+	@echo "  built for CPU: blt_tpo_all:"
+	@echo "    blt_to OR blt_po OR blt_tpo : "; echo -n "      "; echo ${TPO_ALL_BLT} | sed -e 's/ /\n      /g'
+	@echo "  built for GPU: blt_ctpo_all:"
+	@echo "    blt_cto OR blt_cpo OR blt_ctpo : "; echo -n "      "; echo ${CTPO_ALL_BLT} | sed -e 's/ /\n      /g'
+	@echo ""
+	@echo "  blt_ctpo_tensorrt (built with TensorRT support, requires GPU)"
+	@echo -n "      "; echo ${CTPO_BLT_TRT} | sed -e 's/ /\n      /g'
+	@echo ""
+	@echo "  build_all: build ALL previously listed targets"
 
 ## special command to build all targets
-build_all: ${TPO_BUILDALL} ${CTPO_BUILDALL} build_CoreAI_tensorrt
+build_all: ${TPO_ALL_PIP} ${TPO_ALL_BLD} ${CTPO_ALL_PIP} ${CTPO_ALL_BLD} ${CTPO_BLT_TRT}
 
-to: ${TPO_BUILDALL_T}
+pip_to: ${TO_PIP}
+bld_to: ${TO_BLD}
 
-po: ${TPO_BUILDALL_P}
+pip_po: ${PO_PIP}
+bld_po: ${PO_BLD}
 
-tpo: ${TPO_BUILDALL_TP}
+pip_tpo: ${TPO_PIP}
+bld_tpo: ${TPO_BLD}
 
-cto: ${CTPO_BUILDALL_T}
+pip_cto: ${CTO_PIP}
+bld_cto: ${CTO_BLD}
 
-cpo: ${CTPO_BUILDALL_P}
+pip_cpo: ${CPO_PIP}
+bld_cpo: ${CPO_BLD}
 
-ctpo: ${CTPO_BUILDALL_TP}
+pip_ctpo: ${CTPO_PIP}
+bld_ctpo: ${CTPO_BLD}
 
-build_tpo: ${TPO_BUILDALL}
+pip_tpo_all: ${TPO_ALL_PIP}
+bld_tpo_all: ${TPO_ALL_BLD}
 
-build_ctpo:	${CTPO_BUILDALL}
+pip_ctpo_all: ${CTPO_ALL_PIP}
+bld_ctpo_all: ${CTPO_ALL_BLD}
 
-build_ctpo_tensorrt:
-	@BTARG="${CTPO_BUILDALL_TP}" USE_TENSORRT="${TENSORRT}" make build_prep
+blt_ctpo_tensorrt: ${CTPO_BLT_TRT}
 
-${TPO_BUILDALL} ${CTPO_BUILDALL}:
-	@BTARG="$@" USE_TENSORRT="" make build_prep
+${TPO_ALL_PIP} ${CTPO_ALL_PIP} ${TPO_ALL_BLD} ${CTPO_ALL_BLD} ${CTPO_BLT_TRT}:
+	@BTARG="$@" make build_prep
 
 build_prep:
-	@$(eval CoreAI_NAME=$(shell echo ${BTARG} | cut -d- -f 1))
-	@$(eval CoreAI_TAG=$(shell echo ${BTARG} | cut -d- -f 2))
-	@$(eval CoreAI_FULLTAG=${CoreAI_TAG}-${CoreAI_RELEASE}${USE_TENSORRT}${PREFER_PIPINSTALL})
-	@$(eval CoreAI_FULLNAME=${CoreAI_BASENAME}${CoreAI_NAME}-${CoreAI_FULLTAG})
-	@echo ""; echo ""; echo "[*****] Build: ${CoreAI_NAME}:${CoreAI_FULLTAG}";
+	# 25a01-ctpo-12.6.3_2.18.1_2.6.0_4.11.0-built-tensorrt
+	@$(eval BUILD_NAME=$(shell echo ${BTARG} | cut -d '-' -f 2-))
+	@$(eval components=$(shell echo ${BTARG} | cut -d '-' -f 2))
+
+	@echo ""; echo ""; echo "[*****] Build: ${CoreAI_BASENAME}:${BTARG}";
 	@if [ ! -f ${DFBH} ]; then echo "ERROR: ${DFBH} does not exist"; exit 1; fi
 	@if [ ! -x ${DFBH} ]; then echo "ERROR: ${DFBH} is not executable"; exit 1; fi
+
 	@if [ ! -d ${BuildDetails} ]; then mkdir ${BuildDetails}; fi
-	@$(eval BUILD_DESTDIR=${BuildDetails}/${CoreAI_RELEASE}/${CoreAI_FULLNAME})
+	@$(eval BUILD_DESTDIR=${BuildDetails}/${CoreAI_RELEASE}/${BUILD_NAME})
 	@if [ "A${OVERWRITE}" = "Ayes" ]; then rm -rf ${BUILD_DESTDIR}; fi
 	@if [ ! -d ${BUILD_DESTDIR} ]; then mkdir -p ${BUILD_DESTDIR}; fi
 	@if [ ! -d ${BUILD_DESTDIR} ]; then echo "ERROR: ${BUILD_DESTDIR} directory could not be created"; exit 1; fi
 
 	@${DFBH} --verbose --numproc ${CoreAI_NUMPROC} \
-		--build ${CoreAI_NAME} --tag ${CoreAI_TAG} --release ${CoreAI_RELEASE} --destdir ${BUILD_DESTDIR} --nonfree "${CoreAI_ENABLE_NONFREE}" \
+		--components ${components} --tag ${BTARG} --release ${CoreAI_RELEASE} --destdir ${BUILD_DESTDIR} \
+		--nonfree "${CoreAI_ENABLE_NONFREE}" \
 		--cuda_ver "${STABLE_CUDA}" --dnn_arch "${DNN_ARCH_CUDA}" \
 		--cudnn_ver "${STABLE_CUDNN}" --latest_bazelisk "${LATEST_BAZELISK}" \
 		--ffmpeg_version "${CoreAI_FFMPEG_VERSION}" --ffmpeg_nvcodec "${CoreAI_FFMPEG_NVCODEC}" \
@@ -208,8 +222,6 @@ build_prep:
 		--torchvision_version=${CoreAI_TORCHVISION} \
 		--torchdata_version=${CoreAI_TORCHDATA} \
 		--clang_version=${CLANG_VERSION} \
-		--TensorRT="${USE_TENSORRT}" \
-		--prefer_pipinstall="${PREFER_PIPINSTALL}" \
 		--cuda_apt="" \
 		--copyfile=tools/withincontainer_checker.sh \
 		--copyfile=ubuntu24.04/entrypoint.sh \
@@ -218,20 +230,18 @@ build_prep:
 
 	@while [ ! -f ${BUILD_DESTDIR}/env.txt ]; do sleep 1; done
 
-	@CoreAI_NAME=${CoreAI_NAME} CoreAI_TAG=${CoreAI_TAG} CoreAI_FULLTAG=${CoreAI_FULLTAG} BUILD_DESTDIR=${BUILD_DESTDIR} CoreAI_FULLNAME=${CoreAI_FULLNAME} CoreAI_RELEASE=${CoreAI_RELEASE} make pre_build
+	@$(eval CoreAI_FULLNAME=${CoreAI_NAME}-${BTARG})
+		
+	@CoreAI_FULLTAG=${BTARG} BUILD_DESTDIR=${BUILD_DESTDIR} CoreAI_FULLNAME=${CoreAI_FULLNAME} CoreAI_RELEASE=${CoreAI_RELEASE} make pre_build
 
 pre_build:
 	@$(eval CoreAI_FROM=${shell cat ${BUILD_DESTDIR}/env.txt | grep CoreAI_FROM | cut -d= -f 2})
 	@$(eval CoreAI_BUILD=$(shell cat ${BUILD_DESTDIR}/env.txt | grep CoreAI_BUILD | cut -d= -f 2))
 
-	@if [ "A${DOCKERPULL}" == "Ayes" ]; then \
-		echo "** Base image: ${CoreAI_FROM}"; docker pull ${CoreAI_FROM}; echo ""; \
+	@if [ -f ./${CoreAI_FULLNAME}.log ]; then \
+		echo "  !! Log file (${CoreAI_FULLNAME}.log) exists, skipping rebuild (remove to force)"; echo ""; \
 	else \
-		if [ -f ./${CoreAI_FULLNAME}.log ]; then \
-			echo "  !! Log file (${CoreAI_FULLNAME}.log) exists, skipping rebuild (remove to force)"; echo ""; \
-		else \
-			CoreAI_NAME=${CoreAI_NAME} CoreAI_TAG=${CoreAI_TAG} CoreAI_FULLTAG=${CoreAI_FULLTAG} CoreAI_FROM=${CoreAI_FROM} BUILD_DESTDIR=${BUILD_DESTDIR} CoreAI_FULLNAME=${CoreAI_FULLNAME} CoreAI_BUILD="${CoreAI_BUILD}" CoreAI_RELEASE=${CoreAI_RELEASE} make actual_build; \
-		fi; \
+		CoreAI_FULLTAG=${CoreAI_FULLTAG} CoreAI_FROM=${CoreAI_FROM} BUILD_DESTDIR=${BUILD_DESTDIR} CoreAI_FULLNAME=${CoreAI_FULLNAME} CoreAI_BUILD="${CoreAI_BUILD}" CoreAI_RELEASE=${CoreAI_RELEASE} make actual_build; \
 	fi
 
 actual_build:
@@ -244,14 +254,14 @@ actual_build:
 # GPU docker + CPU build okay using NVIDIA_VISIBLE_DEVICES=void 
 	@$(eval DOCKER_PRE=$(shell if [ "A${CHECK_DOCKER_RUNTIME}" == "AGPU" ]; then if [ "A${CoreAI_BUILD}" == "ACPU" ]; then echo "NVIDIA_VISIBLE_DEVICES=void"; else echo ""; fi; fi))
 	@if [ "A${CoreAI_BUILD}" != "A${CHECK_DOCKER_RUNTIME}" ]; then if [ "A${DOCKER_PRE}" == "" ]; then echo "ERROR: Unable to build, default runtime is ${CHECK_DOCKER_RUNTIME} and build requires ${CoreAI_BUILD}. Either add or remove "'"default-runtime": "nvidia"'" in /etc/docker/daemon.json before running: sudo systemctl restart docker"; echo ""; echo ""; exit 1; else echo "Note: GPU docker + CPU build => using ${DOCKER_PRE}"; fi; fi
-	@$(eval VAR_NT="${CoreAI_FULLNAME}")
+	@$(eval VAR_NT="${CoreAI_NAME}")
 	@$(eval VAR_DD="${BUILD_DESTDIR}")
 	@$(eval VAR_PY="${BUILD_DESTDIR}/System--Details.txt")
 	@$(eval VAR_CV="${BUILD_DESTDIR}/OpenCV--Details.txt")
 	@$(eval VAR_TF="${BUILD_DESTDIR}/TensorFlow--Details.txt")
 	@$(eval VAR_FF="${BUILD_DESTDIR}/FFmpeg--Details.txt")
 	@$(eval VAR_PT="${BUILD_DESTDIR}/PyTorch--Details.txt")
-	@${eval CoreAI_DESTIMAGE="${CoreAI_FULLNAME}:${CoreAI_FULLTAG}"}
+	@${eval CoreAI_DESTIMAGE="${CoreAI_BASENAME}:${CoreAI_FULLTAG}"}
 	@${eval CoreAI_BUILDX="CoreAI-${BUILDX_RELEASE}_builder"}
 	@mkdir -p ${VAR_DD}
 	@echo ""

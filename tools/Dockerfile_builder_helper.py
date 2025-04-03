@@ -35,8 +35,15 @@ def parse_build(build):
     return tensorflow, pytorch, cuda
 
 def parse_tag(tag, tensorflow, pytorch, cuda, cuda_arch):
-    # Tag order: [cuda_version] _ [tensorflow_version] _ [pytorch_version] _ [opencv_version]
-    parts = tag.split('_')
+    # ex: 25a01-ctpo-12.6.3_2.18.1_2.6.0_4.11.0-built-tensorrt
+    # version order: [cuda_version] _ [tensorflow_version] _ [pytorch_version] _ [opencv_version]
+    
+    # remove the two prefix
+    comp = tag.split('-')
+    
+    comp_ver = comp[2]
+
+    parts = comp_ver.split('_')
 
     check = len(parts)
     count = 0
@@ -64,11 +71,20 @@ def parse_tag(tag, tensorflow, pytorch, cuda, cuda_arch):
 
     opencv_version = parts.pop(0)
     count += 1
-
+        
     if count != check:
         error_exit(f"Error: Invalid tag ({tag}) -- should have contained {check} parts, but found {count}")
 
-    return tensorflow_version, pytorch_version, cuda_version, opencv_version, dnn_used
+    last = comp.pop()
+    tensorrt = False
+    built = False
+    if last == 'tensorrt':
+        tensorrt = True
+        last = comp.pop()
+    if last == 'built':
+        built = True
+
+    return tensorflow_version, pytorch_version, cuda_version, opencv_version, dnn_used, tensorrt, built
 
 #####
 
@@ -181,7 +197,7 @@ def return_PIP_KERAS(tensorflow_version, indir):
 ##
 
 def return_APT_PIP_TENSORRT(tensorrt, indir):
-    if isBlank(tensorrt):
+    if not tensorrt:
         return slurp_file(f"{indir}/APT_PIP_TENSORRT.False.Dockerfile")
     
     return slurp_file(f"{indir}/APT_PIP_TENSORRT.True.Dockerfile")
@@ -193,7 +209,7 @@ def return_BUILD_TensorFlow(tensorflow_version, cuda_version, dnn_used, built, i
         return slurp_file(f"{indir}/BUILD_TensorFlow.False.Dockerfile")
 
     # PIP Install
-    if isBlank(built):
+    if not built:
         infile = f"{indir}/PIPInstall_TensorFlow.CPU.Dockerfile"
         if cuda_version is not None:
             infile = f"{indir}/PIPInstall_TensorFlow.GPU.Dockerfile"
@@ -271,7 +287,7 @@ def return_BUILD_TORCH(cuda_version, pytorch_version, built, indir, args):
         mode = "GPU"
 
     # PIP Install
-    if isBlank(built):
+    if not built:
         infile = f"{indir}/PIPInstall_PyTorch.CPU.Dockerfile"
         if cuda_version is not None:
             infile = f"{indir}/PIPInstall_PyTorch.GPU.Dockerfile"
@@ -388,7 +404,7 @@ def build_dockerfile(input, indir, release, tensorflow_version, pytorch_version,
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--verbose", action='count', help="Increase verbosity")
-    parser.add_argument("--build", help="Container image name", required=True)
+    parser.add_argument("--components", help="Container components (c,t,p,o)", required=True)
     parser.add_argument("--tag", help="Container image tag", required=True)
     parser.add_argument("--release", help="Release version", required=True)
     parser.add_argument("--destdir", help="Destination directory", required=True)
@@ -409,9 +425,7 @@ def main():
 #    parser.add_argument("--torchtext_version",  help="TorchText version",  default="")
     parser.add_argument("--clang_version", help="Clang version", default="")
     parser.add_argument("--copyfile", help="Copy file to destination directory", action='append', default=[])
-    parser.add_argument("--TensorRT", help="TensorRT version", default="")
-    parser.add_argument("--prefer_pipinstall", help="Prefer pip install", default="")
-    parser.add_argument("--cuda_apt", help="CUDA APT version", default="")
+    parser.add_argument("--cuda_apt", help="CUDA APT string", default="")
     
     args = parser.parse_args()
 
@@ -449,12 +463,12 @@ def main():
     if os.path.isfile(dest_df):
         error_exit(f"Error: Destination Dockerfile {dest_df} already exists, exiting")
 
-    (tensorflow, pytorch, cuda) = parse_build(args.build)
+    (tensorflow, pytorch, cuda) = parse_build(args.components)
     if args.verbose:
         print(f"  Build: tensorflow={tensorflow}, pytorch={pytorch}, cuda={cuda}")
-    (tensorflow_version, pytorch_version, cuda_version, opencv_version, dnn_used) = parse_tag(args.tag, tensorflow, pytorch, cuda, cuda_arch)
+    (tensorflow_version, pytorch_version, cuda_version, opencv_version, dnn_used, tensorrt, built) = parse_tag(args.tag, tensorflow, pytorch, cuda, cuda_arch)
     if args.verbose:
-        print(f"  Tag: tensorflow_version={tensorflow_version}, pytorch_version={pytorch_version}, cuda_version={cuda_version}, dnn_arch={dnn_used}, opencv_version={opencv_version}, tensorrt={args.TensorRT}, built={args.prefer_pipinstall}")
+        print(f"  Tag: tensorflow_version={tensorflow_version}, pytorch_version={pytorch_version}, cuda_version={cuda_version}, dnn_arch={dnn_used}, opencv_version={opencv_version}, tensorrt={tensorrt}, built={built}")
 
     if cuda_version is not None:
         if isBlank(args.dnn_arch):
@@ -475,10 +489,10 @@ def main():
 #        if isBlank(args.torchtext_version):
 #            error_exit(f"Error: torchtext_version required when PyTorch build requested")
 
-    if not isBlank(args.TensorRT):
+    if tensorrt:
         if cuda_version is None:
             error_exit(f"Error: TensorRT requested but no GPU build requested, stopping build")
-        elif args.prefer_pipinstall != "yes":
+        if not built:
             error_exit(f"Error: TensorRT requested but pip install preferred, stopping build")
 
     if isBlank(args.clang_version):
@@ -501,7 +515,7 @@ def main():
                 error_exit(f"Error: Copy file {f} does not exist")
             shutil.copy(f, args.destdir)
 
-    (dockertxt, env) = build_dockerfile(args.input, args.indir, args.release, tensorflow_version, pytorch_version, cuda_version, dnn_used, cudnn_install, opencv_version, args.TensorRT, args.prefer_pipinstall, args.verbose, args)
+    (dockertxt, env) = build_dockerfile(args.input, args.indir, args.release, tensorflow_version, pytorch_version, cuda_version, dnn_used, cudnn_install, opencv_version, tensorrt, built, args.verbose, args)
 
     with open(os.path.join(args.destdir, "Dockerfile"), 'w') as f:
         f.write(dockertxt)
