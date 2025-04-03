@@ -141,7 +141,7 @@ verb_echo ""; verb_echo "== Running as coreai"
 # Load environment variables one by one if they do not exist from /tmp/.CoreAItoo-env
 it=/tmp/.CoreAItoo-env
 if [ ! -f $it ]; then error_exit "Failed to load environment variables from $it"; fi
-echo "-- Loading not already set environment variables from $it"
+verb_echo "-- Loading not already set environment variables from $it"
 load_env $it true
 
 ########## 'coreai' specific section below
