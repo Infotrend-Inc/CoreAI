@@ -89,6 +89,11 @@ def parse_tag(tag, tensorflow, pytorch, cuda, cuda_arch):
 #####
 
 def slurp_file(filename):
+    if not os.path.isfile(filename):
+        error_exit(f"Error: Input file {filename} does not exist")
+    if not os.access(filename, os.R_OK):
+        error_exit(f"Error: Input file {filename} is not readable")
+
     txt = None
     with open(filename, 'r') as f:
         txt = f.read()
@@ -279,7 +284,7 @@ def return_BUILD_OPENCV(opencv_version, cuda_version, indir, args):
 
 def return_BUILD_TORCH(cuda_version, pytorch_version, built, indir, args):
     if pytorch_version is None:
-        return(slurp_file(f"{indir}/BUILD_TORCH.False.Dockerfile"))
+        return(slurp_file(f"{indir}/BUILD_PyTorch.False.Dockerfile"))
 
     tmp = None
     mode = "CPU"
