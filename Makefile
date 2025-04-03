@@ -329,8 +329,8 @@ post_build:
 	@echo ""; echo ""; echo "***** Build completed *****"; echo ""; echo "Content of ${VAR_DD}/BuildInfo.txt"; echo ""; cat ${VAR_DD}/BuildInfo.txt; echo ""; echo ""
 
 post_build_check:
-	@$(eval TF_BUILT=$(shell grep -i -q "TensorFlow_" ${VAR_DD}/BuildInfo.txt && echo "yes" || echo "no"))
-	@$(eval PT_BUILT=$(shell grep -i -q "Torch_" ${VAR_DD}/BuildInfo.txt && echo "yes" || echo "no"))
+	@$(eval TF_BUILT=$(shell grep -q "TensorFlow_" ${VAR_DD}/BuildInfo.txt && echo "yes" || echo "no"))
+	@$(eval PT_BUILT=$(shell grep -q "PyTorch_" ${VAR_DD}/BuildInfo.txt && echo "yes" || echo "no"))
 	@if [ "A${CKTK_CHECK}" == "Ayes" ]; then if [ "A${TF_BUILT}" == "Ayes" ]; then CoreAI_DESTIMAGE="${CoreAI_DESTIMAGE}" VAR_TF=${VAR_TF} VAR_NT="${VAR_NT}" DOCKER_PRE="${DOCKER_PRE}" make force_tf_check; fi; fi
 	@if [ "A${CKTK_CHECK}" == "Ayes" ]; then if [ "A${PT_BUILT}" == "Ayes" ]; then CoreAI_DESTIMAGE="${CoreAI_DESTIMAGE}" VAR_PT=${VAR_PT} VAR_NT="${VAR_NT}" DOCKER_PRE="${DOCKER_PRE}" make force_pt_check; fi; fi
 	@CoreAI_DESTIMAGE="${CoreAI_DESTIMAGE}" VAR_CV=${VAR_CV} VAR_NT="${VAR_NT}" DOCKER_PRE="${DOCKER_PRE}" make force_cv_check
