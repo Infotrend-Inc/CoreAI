@@ -477,11 +477,9 @@ def main():
 
     if not isBlank(args.TensorRT):
         if cuda_version is None:
-            warning(f"Warning: TensorRT requested but no GPU build requested, disabling it")
-            args.TensorRT = None
+            error_exit(f"Error: TensorRT requested but no GPU build requested, stopping build")
         elif args.prefer_pipinstall != "yes":
-            warning(f"Warning: TensorRT requested but pip install not preferred, force-enabling it")
-            args.prefer_pipinstall = "yes"
+            error_exit(f"Error: TensorRT requested but pip install preferred, stopping build")
 
     if isBlank(args.clang_version):
         args.clang_version = None
