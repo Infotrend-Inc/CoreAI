@@ -22,6 +22,11 @@ CoreAI_NUMPROC := $(shell nproc --all)
 DOCKER_BUILD_ARGS=
 #DOCKER_BUILD_ARGS="--no-cache"
 
+# Do not build, only generate Dockerfile. Any value will do, we check for an empty string
+# useful to just have the Makefile generate the Dockerfile(s)
+#SKIP_BUILD="yes"
+SKIP_BUILD=""
+
 # Use "yes" below to create a new destination directory
 # Because the Dockerfile should be the same (from a git perspective) when overwritten, this should not be a problem; and if different, we want to know 
 OVERWRITE="yes"
@@ -154,11 +159,13 @@ all:
 	@echo "    pip_to OR pip_po OR pip_tpo : "; echo -n "      "; echo ${TPO_ALL_PIP} | sed -e 's/ /\n      /g'
 	@echo "  pip_ctpo_all -- pip for GPU:"
 	@echo "    pip_cto OR pip_cpo OR pip_ctpo : "; echo -n "      "; echo ${CTPO_ALL_PIP} | sed -e 's/ /\n      /g'
+	@echo "  build_pip: pip_tpo_all pip_ctpo_all"
 	@echo ""
 	@echo "  blt_tpo_all -- built for CPU:"
 	@echo "    blt_tpo : "; echo -n "      "; echo ${TPO_ALL_BLT} | sed -e 's/ /\n      /g'
 	@echo "  blt_ctpo_all -- built for GPU:"
 	@echo "    blt_ctpo : "; echo -n "      "; echo ${CTPO_ALL_BLT} | sed -e 's/ /\n      /g'
+	@echo "  build_blt: blt_tpo_all blt_ctpo_all"
 	@echo ""
 	@echo "  blt_ctpo_tensorrt -- built with TensorRT support:"
 	@echo -n "      "; echo ${CTPO_BLT_TRT} | sed -e 's/ /\n      /g'
@@ -166,39 +173,41 @@ all:
 	@echo "  build_all: build ALL previously listed targets"
 
 ## special command to build all targets
-build_all: ${TPO_ALL_PIP} ${CTPO_ALL_PIP} ${TPO_ALL_BLD} ${CTPO_ALL_BLD} ${CTPO_BLT_TRT}
+build_pip: ${TPO_ALL_PIP} ${CTPO_ALL_PIP}
+build_blt: ${TPO_ALL_BLT} ${CTPO_ALL_BLT}
+build_all: ${TPO_ALL_PIP} ${CTPO_ALL_PIP} ${TPO_ALL_BLT} ${CTPO_ALL_BLT} ${CTPO_BLT_TRT}
 
 pip_to: ${TO_PIP}
-#bld_to: ${TO_BLD}
+#blt_to: ${TO_BLT}
 
 pip_po: ${PO_PIP}
-#bld_po: ${PO_BLD}
+#blt_po: ${PO_BLT}
 
 pip_tpo: ${TPO_PIP}
-bld_tpo: ${TPO_BLD}
+blt_tpo: ${TPO_BLT}
 
 pip_cto: ${CTO_PIP}
-#bld_cto: ${CTO_BLD}
+#blt_cto: ${CTO_BLT}
 
 pip_cpo: ${CPO_PIP}
-#bld_cpo: ${CPO_BLD}
+#blt_cpo: ${CPO_BLT}
 
 pip_ctpo: ${CTPO_PIP}
-bld_ctpo: ${CTPO_BLD}
+blt_ctpo: ${CTPO_BLT}
 
 pip_tpo_all: ${TPO_ALL_PIP}
-bld_tpo_all: ${TPO_ALL_BLD}
+blt_tpo_all: ${TPO_ALL_BLT}
 
 pip_ctpo_all: ${CTPO_ALL_PIP}
-bld_ctpo_all: ${CTPO_ALL_BLD}
+blt_ctpo_all: ${CTPO_ALL_BLT}
 
 blt_ctpo_tensorrt: ${CTPO_BLT_TRT}
 
-${TPO_ALL_PIP} ${CTPO_ALL_PIP} ${TPO_ALL_BLD} ${CTPO_ALL_BLD} ${CTPO_BLT_TRT}:
+${TPO_ALL_PIP} ${CTPO_ALL_PIP} ${TPO_ALL_BLT} ${CTPO_ALL_BLT} ${CTPO_BLT_TRT}:
 	@BTARG="$@" make build_prep
 
 build_prep:
-	# 25a01-ctpo-12.6.3_2.18.1_2.6.0_4.11.0-built-tensorrt
+# ex: 25a01-ctpo-12.6.3_2.18.1_2.6.0_4.11.0-built-tensorrt
 	@$(eval BUILD_NAME=$(shell echo ${BTARG} | cut -d '-' -f 2-))
 	@$(eval components=$(shell echo ${BTARG} | cut -d '-' -f 2))
 
@@ -241,11 +250,11 @@ pre_build:
 	@if [ -f ./${CoreAI_FULLNAME}.log ]; then \
 		echo "  !! Log file (${CoreAI_FULLNAME}.log) exists, skipping rebuild (remove to force)"; echo ""; \
 	else \
-		CoreAI_FULLTAG=${CoreAI_FULLTAG} CoreAI_FROM=${CoreAI_FROM} BUILD_DESTDIR=${BUILD_DESTDIR} CoreAI_FULLNAME=${CoreAI_FULLNAME} CoreAI_BUILD="${CoreAI_BUILD}" CoreAI_RELEASE=${CoreAI_RELEASE} make actual_build; \
+		CoreAI_FULLTAG=${CoreAI_FULLTAG} CoreAI_FROM=${CoreAI_FROM} BUILD_DESTDIR=${BUILD_DESTDIR} CoreAI_FULLNAME=${CoreAI_FULLNAME} CoreAI_BUILD="${CoreAI_BUILD}" CoreAI_RELEASE=${CoreAI_RELEASE} make build_final_prep; \
 	fi
 
-actual_build:
-# Build prep
+build_final_prep:
+# Build final prep
 	@if [ ! -f ${BUILD_DESTDIR}/env.txt ]; then echo "ERROR: ${BUILD_DESTDIR}/env.txt does not exist, aborting build"; echo ""; exit 1; fi
 	@if [ ! -f ${BUILD_DESTDIR}/Dockerfile ]; then echo "ERROR: ${BUILD_DESTDIR}/Dockerfile does not exist, aborting build"; echo ""; exit 1; fi
 	@if [ "A${CoreAI_BUILD}" == "A" ]; then echo "Missing value for CoreAI_BUILD, aborting"; exit 1; fi
@@ -275,21 +284,25 @@ actual_build:
 	@echo "cd ${BUILD_DESTDIR}" > ${VAR_NT}.cmd
 	@echo "docker buildx ls | grep -q ${CoreAI_BUILDX} && echo \"builder already exists -- to delete it, use: docker buildx rm ${CoreAI_BUILDX}\" || docker buildx create --name ${CoreAI_BUILDX} --driver-opt env.BUILDKIT_STEP_LOG_MAX_SIZE=256000000"  >> ${VAR_NT}.cmd
 	@echo "docker buildx use ${CoreAI_BUILDX} || exit 1" >> ${VAR_NT}.cmd
-#	@echo "echo \"===== Build Start time: \" `date`" >> ${VAR_NT}.cmd
 	@echo "BUILDX_EXPERIMENTAL=1 ${DOCKER_PRE} docker buildx debug --on=error build --progress plain --platform linux/amd64 ${DOCKER_BUILD_ARGS} \\" >> ${VAR_NT}.cmd
 	@echo "  --build-arg CoreAI_NUMPROC=\"$(CoreAI_NUMPROC)\" \\" >> ${VAR_NT}.cmd
 	@echo "  --tag=\"${CoreAI_DESTIMAGE}\" \\" >> ${VAR_NT}.cmd
 	@echo "  -f Dockerfile \\" >> ${VAR_NT}.cmd
 	@echo "  --load \\" >> ${VAR_NT}.cmd
 	@echo "  ." >> ${VAR_NT}.cmd
-#	@echo "echo \"===== Build End time: \" `date`" >> ${VAR_NT}.cmd
 	@cat ${VAR_NT}.cmd | tee ${VAR_NT}.log.temp | tee -a ${VAR_CV} | tee -a ${VAR_TF} | tee -a ${VAR_FF} | tee -a ${VAR_PT} | tee -a ${VAR_PY}
 	@echo "" | tee -a ${VAR_NT}.log.temp
+
+	@if [ "A${SKIP_BUILD}" == "A" ]; then CoreAI_DESTIMAGE="${CoreAI_DESTIMAGE}" VAR_DD="${VAR_DD}" VAR_NT="${VAR_NT}" VAR_CV="${VAR_CV}" VAR_TF="${VAR_TF}" VAR_FF="${VAR_FF}" VAR_PT="${VAR_PT}" VAR_PY="${VAR_PY}" DOCKER_PRE="${DOCKER_PRE}" make actual_build; else echo "Skipping build"; fi
+
+actual_build:
+# Actual build
 	@echo "Press Ctl+c within 5 seconds to cancel"
 	@for i in 5 4 3 2 1; do echo -n "$$i "; sleep 1; done; echo ""
-# Actual build
 	@chmod +x ./${VAR_NT}.cmd
+	@echo "echo \"===== Build Start time: \" `date`" >> ${VAR_NT}.cmd
 	@script -a -e -c ./${VAR_NT}.cmd ${VAR_NT}.log.temp; exit "$${PIPESTATUS[0]}"
+	@echo "echo \"===== Build End time: \" `date`" >> ${VAR_NT}.cmd
 	@CoreAI_DESTIMAGE="${CoreAI_DESTIMAGE}" VAR_DD="${VAR_DD}" VAR_NT="${VAR_NT}" VAR_CV="${VAR_CV}" VAR_TF="${VAR_TF}" VAR_FF="${VAR_FF}" VAR_PT="${VAR_PT}" VAR_PY="${VAR_PY}" DOCKER_PRE="${DOCKER_PRE}" make post_build
 
 post_build:
