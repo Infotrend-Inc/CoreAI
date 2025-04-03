@@ -263,7 +263,7 @@ build_final_prep:
 # GPU docker + CPU build okay using NVIDIA_VISIBLE_DEVICES=void 
 	@$(eval DOCKER_PRE=$(shell if [ "A${CHECK_DOCKER_RUNTIME}" == "AGPU" ]; then if [ "A${CoreAI_BUILD}" == "ACPU" ]; then echo "NVIDIA_VISIBLE_DEVICES=void"; else echo ""; fi; fi))
 	@if [ "A${CoreAI_BUILD}" != "A${CHECK_DOCKER_RUNTIME}" ]; then if [ "A${DOCKER_PRE}" == "" ]; then echo "ERROR: Unable to build, default runtime is ${CHECK_DOCKER_RUNTIME} and build requires ${CoreAI_BUILD}. Either add or remove "'"default-runtime": "nvidia"'" in /etc/docker/daemon.json before running: sudo systemctl restart docker"; echo ""; echo ""; exit 1; else echo "Note: GPU docker + CPU build => using ${DOCKER_PRE}"; fi; fi
-	@$(eval VAR_NT="${CoreAI_NAME}")
+	@$(eval VAR_NT="${CoreAI_BASENAME}-${CoreAI_FULLTAG}")
 	@$(eval VAR_DD="${BUILD_DESTDIR}")
 	@$(eval VAR_PY="${BUILD_DESTDIR}/System--Details.txt")
 	@$(eval VAR_CV="${BUILD_DESTDIR}/OpenCV--Details.txt")
