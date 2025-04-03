@@ -239,7 +239,7 @@ build_prep:
 
 	@while [ ! -f ${BUILD_DESTDIR}/env.txt ]; do sleep 1; done
 
-	@$(eval CoreAI_FULLNAME=${CoreAI_NAME}-${BTARG})
+	@$(eval CoreAI_FULLNAME=${CoreAI_BASENAME}-${BTARG})
 		
 	@CoreAI_FULLTAG=${BTARG} BUILD_DESTDIR=${BUILD_DESTDIR} CoreAI_FULLNAME=${CoreAI_FULLNAME} CoreAI_RELEASE=${CoreAI_RELEASE} make pre_build
 
@@ -263,7 +263,7 @@ build_final_prep:
 # GPU docker + CPU build okay using NVIDIA_VISIBLE_DEVICES=void 
 	@$(eval DOCKER_PRE=$(shell if [ "A${CHECK_DOCKER_RUNTIME}" == "AGPU" ]; then if [ "A${CoreAI_BUILD}" == "ACPU" ]; then echo "NVIDIA_VISIBLE_DEVICES=void"; else echo ""; fi; fi))
 	@if [ "A${CoreAI_BUILD}" != "A${CHECK_DOCKER_RUNTIME}" ]; then if [ "A${DOCKER_PRE}" == "" ]; then echo "ERROR: Unable to build, default runtime is ${CHECK_DOCKER_RUNTIME} and build requires ${CoreAI_BUILD}. Either add or remove "'"default-runtime": "nvidia"'" in /etc/docker/daemon.json before running: sudo systemctl restart docker"; echo ""; echo ""; exit 1; else echo "Note: GPU docker + CPU build => using ${DOCKER_PRE}"; fi; fi
-	@$(eval VAR_NT="${CoreAI_BASENAME}-${CoreAI_FULLTAG}")
+	@$(eval VAR_NT="${CoreAI_FULLNAME}")
 	@$(eval VAR_DD="${BUILD_DESTDIR}")
 	@$(eval VAR_PY="${BUILD_DESTDIR}/System--Details.txt")
 	@$(eval VAR_CV="${BUILD_DESTDIR}/OpenCV--Details.txt")
@@ -379,68 +379,7 @@ dump_builddetails:
 ##### Docker tag: tags the regular images with the TAG_RELEASE details
 ## Needed to be run before for the Jupiter Notebook build, unless you want to pull the image from docker hub
 docker_tag:
-	PTARG="${TPO_BUILDALL} ${CoreAI_BUILDALL}" TAG_PRE="${TAG_RELEASE}" CoreAI_RELEASE="${CoreAI_RELEASE}" DO_UPLOAD="no" make docker_tag_push_core
-
-##########
-##### Jupyter Notebook
-# Requires the base TPO & CoreAI container to either be built locally or docker will attempt to pull otherwise
-# make JN_MODE="-user" jupyter-cuda_tensorflow_pytorch_opencv-11.8.0_2.12.0_2.0.1_4.7.0
-JN_MODE=""
-JN_UID=$(shell id -u)
-JN_GID=$(shell id -g)
-
-jupyter_tpo: ${TPO_JUP}
-
-jupyter_CoreAI: ${CoreAI_JUP}
-
-jupyter_build_all: jupyter_tpo jupyter_CoreAI
-
-${TPO_JUP} ${CoreAI_JUP}:
-	@BTARG="$@" TAG_PRE="${TAG_RELEASE}" CoreAI_RELEASE="${CoreAI_RELEASE}" make jupyter_build
-
-# Do not call directly, call jupter_build_all or jupyter_tpo or jupyter_CoreAI
-jupyter_build:
-# BTARG: jupyter-tensorflow_opencv-2.12... / split: JX: jupyter, JB: tens...opencv, JT: 2.12...
-	@$(eval JX=$(shell echo ${BTARG} | cut -d- -f 1))
-	@$(eval JB=$(shell echo ${BTARG} | cut -d- -f 2))
-	@$(eval JT=$(shell echo ${BTARG} | cut -d- -f 3))
-	@echo "JX: ${JX} | JB: ${JB} | JT: ${JT}"
-	@if [ "A${JX}" == "A" ]; then echo "ERROR: Invalid target: ${BTARG}"; exit 1; fi
-	@if [ "A${JB}" == "A" ]; then echo "ERROR: Invalid target: ${BTARG}"; exit 1; fi
-	@if [ "A${JT}" == "A" ]; then echo "ERROR: Invalid target: ${BTARG}"; exit 1; fi
-	@$(eval JUP_FROM_IMAGE="${TAG_RELEASE}${JB}:${JT}-${CoreAI_RELEASE}")
-	@$(eval JUP_DEST_IMAGE="${JX}-${JB}${JN_MODE}:${JT}-${CoreAI_RELEASE}")
-	@echo "JUP_FROM_IMAGE: ${JUP_FROM_IMAGE}"
-	@echo "JUP_DEST_IMAGE: ${JUP_DEST_IMAGE}"
-	@echo "JN_MODE: ${JN_MODE} / JN_UID: ${JN_UID} / JN_GID: ${JN_GID}"
-	@TEST_IMAGE="${JUP_FROM_IMAGE}" make check_image_exists_then_pull
-	@cd Jupyter_build; docker build --build-arg JUPBC="${JUP_FROM_IMAGE}" --build-arg JUID=${JN_UID} --build-arg JGID=${JN_GID} -f Dockerfile${JN_MODE} --tag="${JUP_DEST_IMAGE}" .
-	@if [ "A${DO_UPLOAD}" == "Ayes" ]; then \
-		JUP_FINAL_DEST_IMAGE="${TAG_RELEASE}${JUP_DEST_IMAGE}"; \
-		echo "Tagging and uploading image: $${JUP_FINAL_DEST_IMAGE}"; \
-		echo "Press Ctl+c within 5 seconds to cancel"; \
-		for i in 5 4 3 2 1; do echo -n "$$i "; sleep 1; done; echo ""; \
-		docker tag ${JUP_DEST_IMAGE} $${JUP_FINAL_DEST_IMAGE}; \
-		docker push $${JUP_FINAL_DEST_IMAGE}; \
-		tl="$$(echo $${JUP_FINAL_DEST_IMAGE} | perl -pe 's%\:([^\:]+)$$%:latest%')"; \
-		docker tag $${JUP_FINAL_DEST_IMAGE} $${tl}; \
-		docker push $${tl}; \
-	fi
-
-
-check_image_exists_then_pull:
-	@echo "Checking for image: ${TEST_IMAGE}"
-	@tmp=$$(docker inspect --type=image --format="Found image" ${TEST_IMAGE} 2> /dev/null); \
-	if [ "A$${tmp}" == "A" ]; then \
-		echo "Missing image: ${TEST_IMAGE} | Downloading it"; \
-		echo "Press Ctl+c within 5 seconds to cancel"; \
-		for i in 5 4 3 2 1; do echo -n "$$i "; sleep 1; done; echo ""; \
-		docker pull ${TEST_IMAGE}; \
-		if [ $$? -ne 0 ]; then \
-			echo "ERROR: Unable to pull image: ${TEST_IMAGE}"; \
-			exit 1; \
-		fi; \
-	fi
+	PTARG="${TPO_ALL_PIP} ${CTPO_ALL_PIP}" DO_UPLOAD="no" make docker_tag_push_core
 
 ##### Various cleanup
 clean:
@@ -458,18 +397,14 @@ buildclean:
 
 ##### For Maintainers only (ie those with write access to the docker hub)
 docker_push:
-	PTARG="${TPO_BUILDALL} ${CoreAI_BUILDALL}" TAG_PRE="${TAG_RELEASE}" CoreAI_RELEASE="${CoreAI_RELEASE}" DO_UPLOAD="yes" make docker_tag_push_core
-
-docker_push_jup:
-	@BTARG="${TPO_JUP}" TAG_PRE="${TAG_RELEASE}" CoreAI_RELEASE="${CoreAI_RELEASE}" DO_UPLOAD="yes" make jupyter_build
-	@BTARG="${CoreAI_JUP}" TAG_PRE="${TAG_RELEASE}" CoreAI_RELEASE="${CoreAI_RELEASE}" DO_UPLOAD="yes" make jupyter_build
+	PTARG="${TPO_ALL_PIP} ${CTPO_ALL_PIP}" DO_UPLOAD="yes" make docker_tag_push_core
 
 docker_tag_push_core:
 	@array=(); \
-	for t in ${PTARG}; do \
-        tag="$$(echo $$t | perl -pe 's%\-([^\-]+)$$%\:$$1%')-$${CoreAI_RELEASE}"; \
-		echo "** Checking for required image: $${tag}"; \
-		tmp=$$(docker inspect --type=image --format="Found image" $${tag} 2> /dev/null); \
+	for tag in ${PTARG}; do \
+		image_name="$${CoreAI_BASENAME}:$${tag}" \
+		echo "** Checking for required image: $${image_name}"; \
+		tmp=$$(docker inspect --type=image --format="Found image" $${image_name} 2> /dev/null); \
 		if [ "A$${tmp}" == "A" ]; then \
 			echo "Missing image: $${tag}"; \
 			exit 1; \
@@ -477,7 +412,7 @@ docker_tag_push_core:
 		array+=($${tag}); \
 	done; \
 	echo "== Found images: $${array[@]}"; \
-	echo "== TAG_PRE: $${TAG_PRE}"; \
+	echo "== TAG_RELEASE: $${TAG_RELEASE}"; \
 	echo ""; \
 	if [ "A${DO_UPLOAD}" == "Ayes" ]; then \
 		echo "++ Tagging then uploading tags to docker hub (no build) -- Press Ctl+c within 5 seconds to cancel -- will only work for maintainers"; \
@@ -486,15 +421,12 @@ docker_tag_push_core:
 		echo "++ Tagging only"; \
 	fi; \
 	for t in $${array[@]}; do \
-		echo "Tagging image: $${t}"; \
-		tr="$${TAG_PRE}$${t}"; \
-		tl="$$(echo $${tr} | perl -pe 's%\:([^\:]+)$$%:latest%')"; \
-		docker tag $${t} $${tr}; \
-		docker tag $${t} $${tl}; \
+		image_name="$${TAG_RELEASE}$${t}"; \
+		echo "Tagging image: $${t} -> $${image_name}"; \
+		docker tag $${t} $${image_name}; \
 		if [ "A${DO_UPLOAD}" == "Ayes" ]; then \
-			echo "Uploading image: $${tr}"; \
-			docker push $${tr}; \
-			docker push $${tl}; \
+			echo "Uploading image: $${image_name}"; \
+			docker push $${image_name}; \
 		fi; \
 	done
 
@@ -503,31 +435,22 @@ docker_tag_push_core:
 # - In the Makefile, update the CoreAI_RELEASE variable to match the expected release tag,
 #   and make appropriate changes as needed to support the build (ie CUDA version, PyTorch version, ...)
 #   At the end, we will tag and make a release for that "release tag" on GitHub
-# - Build ALL the CoreAI images
-#  % make build_CoreAI
-# - Build ALL the TPO images
-#  % make build_tpo
-# - Build the TensorRT image
-#  % make build_CoreAI_tensorrt
+# - Build ALL the CoreAI images (all pip, blt, etc)
+#  % make build_all
 # - Manually check that all the *.testlog contain valid information
 #  % bat *.testlog
 # - Build the README-BuildDetails.md file
 #  % make dump_builddetails
 # - Add TAG_RELEASE tag to all the built images
 #  % make docker_tag
-# -Built the Jupyter Lab images
-#  % make jupyter_build_all
-# - Test the latest Jupyter Lab image, using network port 8765. REPLACE the tag to match the current one.
+# - Test the latest Jupyter Lab version, using network port 8765. REPLACE the tag to use a local image with ctpo
+#     for example 25a01-ctpo-12.6.3_2.18.1_2.6.0_4.11.0
 #   We are mounting pwd to /iti so if you run this from the directoy of this file, you will see the test directory, 
-#   so you can create a new Python Notebook and copy the code to test: cw_hw.py, tf_test.py, pt_test.py
+#     so you can create a new Python Notebook and copy the code to test: cw_hw.py, tf_test.py, pt_test.py
 #   remember to delete any "extra" files created by this process
-#  % docker run --rm -it -v `pwd`:/iti -p 8765:8888 --gpus all jupyter-cuda_tensorflow_pytorch_opencv:REPLACE
-# - Build the Unraid images
-#  % make JN_MODE="-unraid" jupyter_build_all
+#  % docker run --rm -it -v `pwd`:/iti -p 8765:8888 --gpus all coreai:REPLACE
 # - Upload the images to docker hub
 #  % make docker_push
-#  % make docker_push_jup
-#  % make JN_MODE="-unraid" docker_push_jup
 # - Update the README.md file with the new release tag + version history
 # - Commit and push the changes to GitHub (in the branch created at the beginning)
 # - On Github, "Open a pull request", 

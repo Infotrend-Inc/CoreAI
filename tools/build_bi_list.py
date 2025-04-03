@@ -47,17 +47,17 @@ def load_bi(file):
     return bi['CoreAI_BUILD'], bi
 
 def extract_file_details(file):
-    # BuildDetails/20230704/ctpo-11.8.0_2.12.0_2.0.1_4.7.0-20230704/BuildInfo.txt
+    # BuildDetails/25a01/ctpo-12.6.3_2.18.1_2.6.0_4.11.0/BuildInfo.txt
 
     # Split the file path into components
     path_split = file.split('/')
     if len(path_split) != 4:
         error_exit(f"Invalid file path: {file} [path: {path_split}]]")
     
-    release = path_split [1]
-    build_info = path_split [2]
+    release = path_split[1]
+    build_info = path_split[2]
 
-    path_value = os.path.join(path_split[0], path_split[1], path_split[2])
+    path_value = os.path.join(path_split[0], release, build_info)
 
     # remove "coreai-" from build_info
     build_info = build_info[7:]
@@ -66,7 +66,6 @@ def extract_file_details(file):
     components = build_info.split('-')
     headers = components[0]
     versions = components[1].split('_')
-    release_check = components[2]
 
     if len(headers) != len(versions):
         error_exit(f"Invalid build info: {file}")
@@ -92,15 +91,14 @@ def extract_file_details(file):
         opencv_location = headers.index('o')
         opencv_version = versions[opencv_location]
 
-    if release_check != release:
-        error_exit(f"Release mismatch: {file}")
-
     return path_value, components[0], components[1], release, cuda_version, tensorflow_version, pytorch_version, opencv_version
 
 def get_dir_list(dir):
     dir_list = []
     check_dir_exists(dir)
     dir_list = [d for d in os.listdir(dir) if os.path.isdir(os.path.join(dir, d))]
+    # remove any directory ending in "-built"
+    dir_list = [d for d in dir_list if not d.endswith("-built")]
 #    print(f" -- Found {len(dir_list)} directories in {dir}")
     return dir_list
 
@@ -138,39 +136,38 @@ def process_BuildDetails(dir):
 
 def get_wanted_columns(build_comp):
 # Bi structure:
-# CoreAI_FROM: nvidia/cuda:11.8.0-devel-ubuntu22.04
+# CoreAI_FROM=nvidia/cuda:12.6.3-devel-ubuntu24.04
 # CoreAI_BUILD=GPU
-# CoreAI_TENSORFLOW_VERSION=2.12.0
-# CoreAI_PYTORCH_VERSION=None
-# CoreAI_CUDA_VERSION=11.8.0
-# CoreAI_OPENCV_VERSION=4.7.0
-# CoreAI_RELEASE=20230704
-# FOUND_UBUNTU=22.04
-# OpenCV=4.7.0
-# CUDA_found=11.8.89
-# cuDNN_found=8.6.0
-# TensorFlow=2.12.0
-# FFmpeg=5.1.2
-# Torch=2.0.0a0+gite9ebda2
-# TorchVision=0.15.2a0+fa99a53
-# TorchAudio=2.0.2+31de77d
-# TorchData=0.6.1+e1feeb2
-# TorchText=0.15.2a0+4571036
-## Different build types: _built vs _pip
+# CoreAI_TENSORFLOW_VERSION=2.18.1
+# CoreAI_PYTORCH_VERSION=2.6.0
+# CoreAI_CUDA_VERSION=12.6.3
+# CoreAI_OPENCV_VERSION=4.11.0
+# CoreAI_RELEASE=25a01
+# FOUND_UBUNTU=24.04
+# OpenCV_built=4.11.0
+# CUDA_found=12.6.85
+# cuDNN_found=9.5.1
+# TensorFlow_pip=2.18.1
+# FFmpeg_built=7.1.1
+# PyTorch_pip=2.6.0+cu126
+# TorchVision_pip=0.21.0+cu126
+# TorchAudio_pip=2.6.0+cu126
+# TorchData_pip=0.11.0+cpu
+
 
 
     if build_comp == 'to':
         return ['TensorFlow', 'OpenCV', 'FFmpeg', 'Ubuntu'], { 'TensorFlow': 'TensorFlow', 'OpenCV': 'OpenCV', 'FFmpeg': 'FFmpeg', 'Ubuntu': 'FOUND_UBUNTU' }
     elif build_comp == 'po':
-        return ['PyTorch', 'OpenCV', 'FFmpeg', 'Ubuntu'], { 'PyTorch': 'Torch', 'OpenCV': 'OpenCV', 'FFmpeg': 'FFmpeg', 'Ubuntu': 'FOUND_UBUNTU' }
+        return ['PyTorch', 'OpenCV', 'FFmpeg', 'Ubuntu'], { 'PyTorch': 'PyTorch', 'OpenCV': 'OpenCV', 'FFmpeg': 'FFmpeg', 'Ubuntu': 'FOUND_UBUNTU' }
     elif build_comp == 'tpo':
-        return ['TensorFlow', 'PyTorch', 'OpenCV', 'FFmpeg', 'Ubuntu'], { 'TensorFlow': 'TensorFlow', 'PyTorch': 'Torch', 'OpenCV': 'OpenCV', 'FFmpeg': 'FFmpeg', 'Ubuntu': 'FOUND_UBUNTU' }
+        return ['TensorFlow', 'PyTorch', 'OpenCV', 'FFmpeg', 'Ubuntu'], { 'TensorFlow': 'TensorFlow', 'PyTorch': 'PyTorch', 'OpenCV': 'OpenCV', 'FFmpeg': 'FFmpeg', 'Ubuntu': 'FOUND_UBUNTU' }
     elif build_comp == 'cto':
         return ['CUDA', 'cuDNN', 'TensorFlow', 'OpenCV', 'FFmpeg', 'Ubuntu'], { 'CUDA': 'CUDA_found', 'cuDNN': 'cuDNN_found', 'TensorFlow': 'TensorFlow', 'OpenCV': 'OpenCV', 'FFmpeg': 'FFmpeg', 'Ubuntu': 'FOUND_UBUNTU' }
     elif build_comp == 'cpo':
-        return ['CUDA', 'cuDNN', 'PyTorch', 'OpenCV', 'FFmpeg', 'Ubuntu'], { 'CUDA': 'CUDA_found', 'cuDNN': 'cuDNN_found', 'PyTorch': 'Torch', 'OpenCV': 'OpenCV', 'FFmpeg': 'FFmpeg', 'Ubuntu': 'FOUND_UBUNTU' }
+        return ['CUDA', 'cuDNN', 'PyTorch', 'OpenCV', 'FFmpeg', 'Ubuntu'], { 'CUDA': 'CUDA_found', 'cuDNN': 'cuDNN_found', 'PyTorch': 'PyTorch', 'OpenCV': 'OpenCV', 'FFmpeg': 'FFmpeg', 'Ubuntu': 'FOUND_UBUNTU' }
     elif build_comp == 'ctpo':
-        return ['CUDA', 'cuDNN', 'TensorFlow', 'PyTorch', 'OpenCV', 'FFmpeg', 'Ubuntu'], { 'CUDA': 'CUDA_found', 'cuDNN': 'cuDNN_found', 'TensorFlow': 'TensorFlow', 'PyTorch': 'Torch', 'OpenCV': 'OpenCV', 'FFmpeg': 'FFmpeg', 'Ubuntu': 'FOUND_UBUNTU' }
+        return ['CUDA', 'cuDNN', 'TensorFlow', 'PyTorch', 'OpenCV', 'FFmpeg', 'Ubuntu'], { 'CUDA': 'CUDA_found', 'cuDNN': 'cuDNN_found', 'TensorFlow': 'TensorFlow', 'PyTorch': 'PyTorch', 'OpenCV': 'OpenCV', 'FFmpeg': 'FFmpeg', 'Ubuntu': 'FOUND_UBUNTU' }
     else:
         error_exit(f" Unknown build type: {build_comp}")
 
@@ -235,7 +232,6 @@ def generate_markdown(abi):
 
                     line_cols = []
                     for wanted_col in wanted:
-#                        print(f" -- {wanted_col}")
                         if wanted_col == wanted[0]:
                             line_cols.append(f"[{version_comp}-{release_version}]({dockerfile})")
                             continue
