@@ -166,8 +166,8 @@ def return_CoreAI_CUDA_APT(cuda_version, cuda_apt, indir):
 
 ##
 
-def return_INSTALL_CLANG(clang_version, indir):
-    if clang_version is None:
+def return_INSTALL_CLANG(clang_version, indir, built):
+    if clang_version is None or not built:
         return slurp_file(f"{indir}/INSTALL_CLANG.False.Dockerfile")
     
     tmp = slurp_file(f"{indir}/INSTALL_CLANG.True.Dockerfile")
@@ -337,7 +337,7 @@ def build_dockerfile(input, indir, release, tensorflow_version, pytorch_version,
     dockertxt = replace_line(dockertxt, "#==CoreAI_NUMPROC==#", repl)
 
     #==CoreAI_INSTALL_CLANG==#
-    repl = return_INSTALL_CLANG(args.clang_version, indir)
+    repl = return_INSTALL_CLANG(args.clang_version, indir, built)
     dockertxt = replace_line(dockertxt, "#==CoreAI_INSTALL_CLANG==#", repl)
 
     #==APT_TORCH==#
@@ -466,7 +466,7 @@ def main():
 
     dest_df = os.path.join(args.destdir, "Dockerfile")
     if os.path.isfile(dest_df):
-        error_exit(f"Error: Destination Dockerfile {dest_df} already exists, exiting")
+        print(f"  Destination Dockerfile {dest_df} already exists, overwriting")
 
     (tensorflow, pytorch, cuda) = parse_build(args.components)
     if args.verbose:
@@ -491,8 +491,6 @@ def main():
             error_exit(f"Error: torchaudio_version required when PyTorch build requested")
         if isBlank(args.torchdata_version):
             error_exit(f"Error: torchdata_version required when PyTorch build requested")
-#        if isBlank(args.torchtext_version):
-#            error_exit(f"Error: torchtext_version required when PyTorch build requested")
 
     if tensorrt:
         if cuda_version is None:
