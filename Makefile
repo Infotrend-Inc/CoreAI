@@ -300,9 +300,7 @@ actual_build:
 	@echo "Press Ctl+c within 5 seconds to cancel"
 	@for i in 5 4 3 2 1; do echo -n "$$i "; sleep 1; done; echo ""
 	@chmod +x ./${VAR_NT}.cmd
-	@echo "echo \"===== Build Start time: \" `date`" >> ${VAR_NT}.cmd
 	@script -a -e -c ./${VAR_NT}.cmd ${VAR_NT}.log.temp; exit "$${PIPESTATUS[0]}"
-	@echo "echo \"===== Build End time: \" `date`" >> ${VAR_NT}.cmd
 	@CoreAI_DESTIMAGE="${CoreAI_DESTIMAGE}" VAR_DD="${VAR_DD}" VAR_NT="${VAR_NT}" VAR_CV="${VAR_CV}" VAR_TF="${VAR_TF}" VAR_FF="${VAR_FF}" VAR_PT="${VAR_PT}" VAR_PY="${VAR_PY}" DOCKER_PRE="${DOCKER_PRE}" make post_build
 
 post_build:
