@@ -27,10 +27,6 @@ DOCKER_BUILD_ARGS=
 #SKIP_BUILD="yes"
 SKIP_BUILD=""
 
-# Use "yes" below to create a new destination directory
-# Because the Dockerfile should be the same (from a git perspective) when overwritten, this should not be a problem; and if different, we want to know 
-OVERWRITE="yes"
-
 # Use "yes" below to force some tools check post build (recommended)
 # this will use docker run [...] --gpus all and extend the TF build log
 CKTK_CHECK="yes"
@@ -204,20 +200,44 @@ blt_ctpo_all: ${CTPO_ALL_BLT}
 blt_ctpo_tensorrt: ${CTPO_BLT_TRT}
 
 ${TPO_ALL_PIP} ${CTPO_ALL_PIP} ${TPO_ALL_BLT} ${CTPO_ALL_BLT} ${CTPO_BLT_TRT}:
-	@BTARG="$@" make build_prep
+	@BTARG="$@" make build_log_check
 
-build_prep:
+
+##
+build_log_check:
 # ex: 25a01-ctpo-12.6.3_2.18.1_2.6.0_4.11.0-built-tensorrt
 	@$(eval BUILD_NAME=$(shell echo ${BTARG} | cut -d '-' -f 2-))
 	@$(eval components=$(shell echo ${BTARG} | cut -d '-' -f 2))
+	@$(eval BUILD_DESTDIR=${BuildDetails}/${CoreAI_RELEASE}/${BUILD_NAME})
 
+	@$(eval CoreAI_FULLNAME=${CoreAI_BASENAME}-${BTARG})
+	@if [ -f ./${CoreAI_FULLNAME}.log ]; then \
+		echo "  !! Log file (${CoreAI_FULLNAME}.log) exists, skipping rebuild and sidecar files generation (remove to force)"; echo ""; \
+		if [ -d ${BUILD_DESTDIR} ]; then \
+			CoreAI_FULLNAME=${CoreAI_FULLNAME} BUILD_DESTDIR=${BUILD_DESTDIR} make check_builddir; \
+		fi; \
+	else \
+		BUILD_NAME=${BUILD_NAME} components=${components} CoreAI_FULLTAG=${BTARG} CoreAI_FULLNAME=${CoreAI_FULLNAME} BUILD_DESTDIR=${BUILD_DESTDIR} make build_prep; \
+	fi
+
+
+##
+check_builddir:
+	@expected_files="BuildInfo.txt  Dockerfile  entrypoint.sh  FFmpeg--Details.txt  OpenCV--Details.txt  PyTorch--Details.txt  run_jupyter.sh  System--Details.txt  TensorFlow--Details.txt  withincontainer_checker.sh"; \
+	for file in $${expected_files}; do \
+		if [ ! -f ${BUILD_DESTDIR}/$$file ]; then \
+			echo "  !! Missing file: ${BUILD_DESTDIR}/$$file -- consider removing the ${CoreAI_FULLNAME}.log file to force rebuild"; \
+		fi; \
+	done
+
+
+##
+build_prep:
 	@echo ""; echo ""; echo "[*****] Build: ${CoreAI_BASENAME}:${BTARG}";
 	@if [ ! -f ${DFBH} ]; then echo "ERROR: ${DFBH} does not exist"; exit 1; fi
 	@if [ ! -x ${DFBH} ]; then echo "ERROR: ${DFBH} is not executable"; exit 1; fi
 
 	@if [ ! -d ${BuildDetails} ]; then mkdir ${BuildDetails}; fi
-	@$(eval BUILD_DESTDIR=${BuildDetails}/${CoreAI_RELEASE}/${BUILD_NAME})
-	@if [ "A${OVERWRITE}" = "Ayes" ]; then rm -rf ${BUILD_DESTDIR}; fi
 	@if [ ! -d ${BUILD_DESTDIR} ]; then mkdir -p ${BUILD_DESTDIR}; fi
 	@if [ ! -d ${BUILD_DESTDIR} ]; then echo "ERROR: ${BUILD_DESTDIR} directory could not be created"; exit 1; fi
 
@@ -238,11 +258,11 @@ build_prep:
 	&& sync
 
 	@while [ ! -f ${BUILD_DESTDIR}/env.txt ]; do sleep 1; done
-
-	@$(eval CoreAI_FULLNAME=${CoreAI_BASENAME}-${BTARG})
 		
 	@CoreAI_FULLTAG=${BTARG} BUILD_DESTDIR=${BUILD_DESTDIR} CoreAI_FULLNAME=${CoreAI_FULLNAME} CoreAI_RELEASE=${CoreAI_RELEASE} make pre_build
 
+
+##
 pre_build:
 	@$(eval CoreAI_FROM=${shell cat ${BUILD_DESTDIR}/env.txt | grep CoreAI_FROM | cut -d= -f 2})
 	@$(eval CoreAI_BUILD=$(shell cat ${BUILD_DESTDIR}/env.txt | grep CoreAI_BUILD | cut -d= -f 2))
@@ -253,6 +273,8 @@ pre_build:
 		CoreAI_FULLTAG=${CoreAI_FULLTAG} CoreAI_FROM=${CoreAI_FROM} BUILD_DESTDIR=${BUILD_DESTDIR} CoreAI_FULLNAME=${CoreAI_FULLNAME} CoreAI_BUILD="${CoreAI_BUILD}" CoreAI_RELEASE=${CoreAI_RELEASE} make build_final_prep; \
 	fi
 
+
+##
 build_final_prep:
 # Build final prep
 	@if [ ! -f ${BUILD_DESTDIR}/env.txt ]; then echo "ERROR: ${BUILD_DESTDIR}/env.txt does not exist, aborting build"; echo ""; exit 1; fi
@@ -295,6 +317,8 @@ build_final_prep:
 
 	@if [ "A${SKIP_BUILD}" == "A" ]; then CoreAI_DESTIMAGE="${CoreAI_DESTIMAGE}" VAR_DD="${VAR_DD}" VAR_NT="${VAR_NT}" VAR_CV="${VAR_CV}" VAR_TF="${VAR_TF}" VAR_FF="${VAR_FF}" VAR_PT="${VAR_PT}" VAR_PY="${VAR_PY}" DOCKER_PRE="${DOCKER_PRE}" make actual_build; else echo "Skipping build"; fi
 
+
+##
 actual_build:
 # Actual build
 	@echo "Press Ctl+c within 5 seconds to cancel"
@@ -303,6 +327,7 @@ actual_build:
 	@script -a -e -c ./${VAR_NT}.cmd ${VAR_NT}.log.temp; exit "$${PIPESTATUS[0]}"
 	@CoreAI_DESTIMAGE="${CoreAI_DESTIMAGE}" VAR_DD="${VAR_DD}" VAR_NT="${VAR_NT}" VAR_CV="${VAR_CV}" VAR_TF="${VAR_TF}" VAR_FF="${VAR_FF}" VAR_PT="${VAR_PT}" VAR_PY="${VAR_PY}" DOCKER_PRE="${DOCKER_PRE}" make post_build
 
+##
 post_build:
 	@${eval tmp_id=$(shell docker create ${CoreAI_DESTIMAGE})}
 	@printf "\n\n***** OpenCV configuration:\n" >> ${VAR_CV}; docker cp ${tmp_id}:/tmp/opencv_info.txt /tmp/CoreAI; cat /tmp/CoreAI >> ${VAR_CV}
@@ -326,6 +351,7 @@ post_build:
 
 	@echo ""; echo ""; echo "***** Build completed *****"; echo ""; echo "Content of ${VAR_DD}/BuildInfo.txt"; echo ""; cat ${VAR_DD}/BuildInfo.txt; echo ""; echo ""
 
+##
 post_build_check:
 	@$(eval TF_BUILT=$(shell grep -q "TensorFlow_" ${VAR_DD}/BuildInfo.txt && echo "yes" || echo "no"))
 	@$(eval PT_BUILT=$(shell grep -q "PyTorch_" ${VAR_DD}/BuildInfo.txt && echo "yes" || echo "no"))
@@ -358,6 +384,7 @@ force_pt_check:
 force_cv_check:
 	@echo "cv_hw"
 	@${DOCKER_PRE} docker run --rm -v `pwd`:/iti -v `pwd`/tools/skip_disclaimer.sh:/opt/nvidia/nvidia_entrypoint.sh --gpus all ${CoreAI_DESTIMAGE} python3 /iti/test/cv_hw.py | tee -a ${VAR_NT}.testlog; exit "$${PIPESTATUS[0]}"
+
 
 ##### buildx rm
 buildx_rm:
