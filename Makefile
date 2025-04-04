@@ -422,22 +422,22 @@ buildclean:
 
 ##### For Maintainers only (ie those with write access to the docker hub)
 docker_push:
-	PTARG="${TPO_ALL_PIP} ${CTPO_ALL_PIP}" DO_UPLOAD="yes" make docker_tag_push_core
+	@PTARG="${TPO_ALL_PIP} ${CTPO_ALL_PIP}" DO_UPLOAD="yes" make docker_tag_push_core
 
 docker_tag_push_core:
 	@array=(); \
 	for tag in ${PTARG}; do \
-		image_name="$${CoreAI_BASENAME}:$${tag}" \
+		image_name="${CoreAI_BASENAME}:$${tag}"; \
 		echo "** Checking for required image: $${image_name}"; \
 		tmp=$$(docker inspect --type=image --format="Found image" $${image_name} 2> /dev/null); \
 		if [ "A$${tmp}" == "A" ]; then \
-			echo "Missing image: $${tag}"; \
+			echo "Missing image: $${image_name}"; \
 			exit 1; \
 		fi; \
-		array+=($${tag}); \
+		array+=($${image_name}); \
 	done; \
 	echo "== Found images: $${array[@]}"; \
-	echo "== TAG_RELEASE: $${TAG_RELEASE}"; \
+	echo "== TAG_RELEASE: ${TAG_RELEASE}"; \
 	echo ""; \
 	if [ "A${DO_UPLOAD}" == "Ayes" ]; then \
 		echo "++ Tagging then uploading tags to docker hub (no build) -- Press Ctl+c within 5 seconds to cancel -- will only work for maintainers"; \
@@ -446,7 +446,7 @@ docker_tag_push_core:
 		echo "++ Tagging only"; \
 	fi; \
 	for t in $${array[@]}; do \
-		image_name="$${TAG_RELEASE}$${t}"; \
+		image_name="${TAG_RELEASE}$${t}"; \
 		echo "Tagging image: $${t} -> $${image_name}"; \
 		docker tag $${t} $${image_name}; \
 		if [ "A${DO_UPLOAD}" == "Ayes" ]; then \
