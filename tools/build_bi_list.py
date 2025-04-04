@@ -59,9 +59,6 @@ def extract_file_details(file):
 
     path_value = os.path.join(path_split[0], release, build_info)
 
-    # remove "coreai-" from build_info
-    build_info = build_info[7:]
-
     # then split the remaining string
     components = build_info.split('-')
     headers = components[0]
