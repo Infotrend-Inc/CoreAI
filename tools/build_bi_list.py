@@ -199,7 +199,7 @@ def generate_markdown(abi):
             for release_version in sorted(abi[build_type][build_comp].keys(), reverse=True):
                 files = {}
                 for version_comp in sorted(abi[build_type][build_comp][release_version].keys()):
-                    print(f"  - {build_type} {build_comp} {release_version} {version_comp}")
+                    print(f"  - {build_type} {build_comp} {release_version} {version_comp} -> tag: {release_version}-{build_comp}-{version_comp}")
                     path = abi[build_type][build_comp][release_version][version_comp]['path']
 
                     dockerfile = os.path.join(path, 'Dockerfile')
@@ -230,7 +230,7 @@ def generate_markdown(abi):
                     line_cols = []
                     for wanted_col in wanted:
                         if wanted_col == wanted[0]:
-                            line_cols.append(f"[{version_comp}-{release_version}]({dockerfile})")
+                            line_cols.append(f"[{release_version}-{build_comp}-{version_comp}]({dockerfile})")
                             continue
                         wanted_it = wanted_col
                         if wanted_col in wanted_match:
