@@ -1,16 +1,31 @@
-<h1>CoreAI</h1>
-CUDA + TensorFlow + PyTorch + OpenCV Docker container
+<h1>CoreAI: QuickStart</h1>
 
-Latest release: 2025a01
+To start the `latest` version of CoreAI with CUDA, TensorFlow, PyTorch and OpenCV, and JupyterLab (accessible on the host on port 8888) as the `coreai` user within the container matching the user ID and group ID of the user running the command. The `/iti` volume is mounted within the container from the folder where the command is started. The container will output verbose information if the `CoreAI_VERBOSE` environment variable is set (remove the `-e CoreAI_VERBOSE="yes"` from the command line to disable verbose output).
+
+```bash
+# podman command
+podman run --rm -it --userns=keep-id --device nvidia.com/gpu=all -e WANTED_UID=`id -u` -e WANTED_GID=`id -g` -e CoreAI_VERBOSE="yes" -v `pwd`:/iti -p 127.0.0.1:8888:8888 docker.io/infotrend/coreai:latest  /run_jupyter.sh
+
+# docker command
+docker run --rm -it --runtime=nvidia --gpus all -e WANTED_UID=`id -u` -e WANTED_GID=`id -g` -e CoreAI_VERBOSE="yes" -v `pwd`:/iti -p 127.0.0.1:8888:8888  infotrend/coreai:latest  /run_jupyter.sh
+```
+
+<hr>
+<h1>CoreAI --
+CUDA + TensorFlow + PyTorch + OpenCV Docker container
+</h1>
+
+Latest release: `2025a01`
 
 `Dockerfile`s to build containers with support for CPU and GPU (NVIDIA CUDA) containers with support for TensorFlow, PyTorch and OpenCV (or combinations of), based on `nvidia/cuda` and Ubuntu 24.04 container images.
 
-The tool's purpose is to enable developers, ML and CV enthusiasts to build and test solutions `FROM` a docker container, allowing fast prototyping and release of code to the community.
+The tool's aim is to enable developers, ML and CV enthusiasts to build and test solutions `FROM` a docker container, allowing fast prototyping and release of code to the community.
 
 We have published examples of use of the tool to support efforts in Computer Vision, Data Science, Machine Learning and Natural Language Processing.
 
 Go to https://github.com/Infotrend-Inc/CoreAI-Demo_Projects for details.
 
+- [Container Usage](#container-usage)
 - [1. Builds and Notes](#1-builds-and-notes)
   - [1.1. Tag naming conventions](#11-tag-naming-conventions)
   - [1.2. Building](#12-building)
@@ -18,10 +33,7 @@ Go to https://github.com/Infotrend-Inc/CoreAI-Demo_Projects for details.
     - [1.2.2. Building (using Makefile)](#122-building-using-makefile)
     - [1.2.3. Building (using Dockerfile)](#123-building-using-dockerfile)
   - [1.3. Available builds on DockerHub](#13-available-builds-on-dockerhub)
-    - [1.3.1. TensorRT build](#131-tensorrt-build)
   - [1.4. Build Details](#14-build-details)
-  - [1.5. Jupyter build](#15-jupyter-build)
-  - [1.6. Unraid build](#16-unraid-build)
 - [2. Usage and more](#2-usage-and-more)
   - [2.1. A note on supported GPU in the Docker Hub builds](#21-a-note-on-supported-gpu-in-the-docker-hub-builds)
   - [2.2. Using the container images](#22-using-the-container-images)
@@ -32,261 +44,253 @@ Go to https://github.com/Infotrend-Inc/CoreAI-Demo_Projects for details.
 - [3. Version History](#3-version-history)
 
 
-The CoreAI (CUDA + TensorFlow + PyTorch + OpenCV) project aims to address the following challenges and provide solutions:
-- **Containerized Development Environment**: CoreAI offers Docker containers with pre-configured environments containing CUDA, TensorFlow, PyTorch, and OpenCV. This allows developers to work within a consistent and isolated environment.
+The CoreAI project aims to address the following challenges and provide solutions:
+- **Containerized Development Environment**: CoreAI offers Docker containers with pre-configured environments containing CUDA, TensorFlow, PyTorch, and OpenCV. This allows developers to work within a consistent and isolated environment. `Dockerfile`s are available in the `BuildDetails/<release>/<components>-<versions>[<extras>]` directories for local builds and customization.
 - **Fast Prototyping and Testing**: The project facilitates fast prototyping and testing by providing pre-built containers. Developers can quickly iterate on their code within the containerized environment.
 - **Versioned Frameworks and Dependencies**: The project uses versioned Docker containers, making it easier for developers to work with specific versions of TensorFlow, PyTorch, OpenCV, and other components.
-- **Jupyter Lab Integration**: CoreAI includes Jupyter Lab builds, allowing developers to use a web-based interface for interactive development, visualization, and documentation.
+- **Jupyter Lab Integration**: CoreAI includes Jupyter Lab access, allowing developers to use a web-based interface for interactive development, visualization, and documentation.
+- **Non-root User**: CoreAI containers run as a non-root user, which is a security best practice. The user is `coreai` with UID/GID that can be modified using the `WANTED_UID` and `WANTED_GID` environment variables (default UID/GID for `coreai` is `1024`/`1024`). The `coreai` user is `sudo`-capable.
+- **Unraid**: CoreAI containers can be run on [Unraid](https://unraid.net/), a container management platform that provides a user-friendly interface for managing Docker containers.
+- **`-built` builds**: It is possible to create local builds and compile TensorFlow and PyTorch from source. Shared builds use the offical `pip` packages.
+- **TensorRT**: CoreAI containers can be built locally with TensorRT support (only GPU builds).
+- **Available Builds**: We are providing pre-built containers from Infotrend Inc.'s Docker account at https://hub.docker.com/r/infotrend/. Those are not the `-built` or `-tensorrt` version.
 
-Building each container independently is made possible by the `Dockerfile` available in the `BuildDetails/<release>/<container>-<tag>` directories.
+Building each container independently is made possible by the `Dockerfile` available in the `BuildDetails/<release>/<components>-<versions>[<extras>]` directories.
 Building each container takes resources and time (counted in many cores, GB of memory and build hours).
 
 Pre-built containers are available from Infotrend Inc.'s Docker account at https://hub.docker.com/r/infotrend/
 Details on the available container and build are discussed in this document.
 
-A Jupyter Lab and Unraid version of this WebUI-enabled version are also available on our Docker Hub, as well as able to be built from the `Makefile`.
+A Jupyter Lab and Unraid version of this WebUI-enabled version are also available on our Docker Hub and are using the same build process as the base container.
 
-Note: this tool was built earlier in 2023, iterations of its Jupyter Lab were made available to Infotrend's data scientists, and we are releasing it to help the developer community.
+Note: this tool was built earlier in 2023, iterations of its Jupyter Lab were made available to Infotrend's data scientists, and has been released in the past under different names. **CoreAI** is an evolution of those previous iterations.
+
+# Container Usage
+
+Available environment variables:
+- `CoreAI_VERBOSE`: Set to `yes` to enable verbose output (remove the `-e CoreAI_VERBOSE="yes"` from the command line to disable verbose output)
+- `WANTED_UID`: Set to the desired user ID (recommended to set this to the user ID of the user running the command using `id -u`)
+- `WANTED_GID`: Set to the desired group ID (recommended to set this to the group ID of the user running the command using `id -g`)
+
+The container can be started using `docker` or `podman`.
+
+An example of a command to start the container is:
+
+```bash
+# with podman
+podman run --rm -it --userns=keep-id --device nvidia.com/gpu=all -e WANTED_UID=`id -u` -e WANTED_GID=`id -g` -e CoreAI_VERBOSE="yes" -v `pwd`:/iti -p 127.0.0.1:8888:8888 docker.io/infotrend/coreai:latest  /run_jupyter.sh
+
+# with docker
+docker run --rm -it --runtime=nvidia --gpus all -e WANTED_UID=`id -u` -e WANTED_GID=`id -g` -e CoreAI_VERBOSE="yes" -v `pwd`:/iti -p 127.0.0.1:8888:8888  infotrend/coreai:latest  /run_jupyter.sh
+```
+
+Decomposing the command lines:
+- `[podman|docker] run`: start a container based on the specified image
+- `--rm`: remove the container when it exits
+- `-it`: run in interactive mode with a pseudo-TTY
+- `podman` only:
+  - `--userns=keep-id`: keep the user namespace of the host
+  - `--device nvidia.com/gpu=all`: give access to all GPUs
+- `docker` only:
+  - `--runtime=nvidia`: use the NVIDIA runtime
+  - `--gpus all`: give access to all GPUs
+- `` -e WANTED_UID=`id -u` ``: set the desired user ID to the container's starting user's ID
+- `` -e WANTED_GID=`id -g` ``: set the desired group ID to the container's starting user's group ID
+- `-e CoreAI_VERBOSE="yes"`: set the verbose mode (remove the `-e CoreAI_VERBOSE="yes"` from the command line to disable verbose output).
+- `` -v `pwd`:/iti ``: mount the current directory as `/iti` in the container. `/iti` is the default working directory
+- `-p 127.0.0.1:8888:8888`: map port 8888 from the container to the host
+- `infotrend/coreai:latest`: the image to use, use the tag that matches the build you want to use
+- `/run_jupyter.sh`: the script to run, which exists by default within the container image and will start a Jupyter Lab instance (with an `iti` password). When no script is specified, the container will start a `/bin/bash` session within the new container.
+
 
 #  1. Builds and Notes
 
 The base for those container images is pulled from Dockerhub's official `ubuntu:24.04` or `nvidia/cuda:[...]-devel-ubuntu24.04` images. 
 
 More details on the Nvidia base images are available at https://hub.docker.com/r/nvidia/cuda/
-In particular, please note that "By downloading these images, you agree to the terms of the license agreements for NVIDIA software included in the images"; with further details on DockerHub version from https://docs.nvidia.com/cuda/eula/index.html#attachment-a
+In particular, please note that **By downloading these images, you agree to the terms of the license agreements for NVIDIA software included in the images**; with further details on DockerHub version from https://docs.nvidia.com/cuda/eula/index.html#attachment-a
 
-For GPU-optimized versions, we will need to build the `cuda_` versions on a host with the supported hardware.
-When using GPU and building the container, we need to install the NVIDIA Container Toolkit found at https://github.com/NVIDIA/nvidia-container-toolkit
+For GPU-optimized versions, we recommend building on a host with the supported hardware.
+Using a GPU requires the installation of the NVIDIA Container Toolkit found at https://github.com/NVIDIA/nvidia-container-toolkit
 Note that the NVIDIA video driver on the Linux host needs to support the version of CUDA that we are trying to build (we can see the supported CUDA version and driver version information when running the `nvidia-smi` command)
 
-For CPU builds, simply build the non-`cuda_` versions.
-
 Pre-built images are available for download on Infotrend's DockerHub (at https://hub.docker.com/r/infotrend/). 
-Those are built using the same method provided by the `Makefile` and the corresponding `Dockerfile` used for those builds is stored in the matching `BuildDetails/<release>/<container>-<tag>` directory.
+Those are built using the same method provided by the `Makefile` and the corresponding `Dockerfile` used for those builds is stored in the matching `BuildDetails/<release>/<components>-<versions>[<extras>]` folder.
 
 ##  1.1. Tag naming conventions
 
-The tag naming convention follows a `_`-components split after the base name of `infotrend/CoreAI-` followed by the "release" tag (Docker container images are always lowercase).
-`-` is used as a feature separator, in particular for `jupyter` or `unraid` specific builds.
-Any `cuda_` build is a `GPU` build while all non-`cuda_` ones are `CPU` only.
+```text
+<basename>-<release>-<components>-<versions>[<extras>]
+```
 
-For example, for `infotrend/CoreAI-tensorflow_pytorch_opencv:2.12.0_2.0.1_4.7.0-20231120`, this means: `"base name"-"component1"_"compoment2"_"component3":"component1_version"_"component2_version"_"component3_version"-"release"` with:
-- `base name`=`infotrend/CoreAI-`
-- `component1` + `component1_version` = `tensorflow` `2.12.0`
-- `component2` + `component2_version` = `pytorch` `2.0.1`
-- `component3` + `component3_version` = `opencv` `4.7.0`
-- `release`=`20231120`
-As such, this was "Infotrend's CoreAI release 20231120 with TensorFlow 2.12.0, PyTorch 2.0.1, and OpenCV 4.7.0 without any CUDA support." 
-(Since no `cuda_` was part of the name, this is a `CPU` build)
+The tag naming convention follows a `-` and `_`-components split to be able to be used by DockerHub.
+- `<basename>`: the base name of the container image. For local builds `coreai`. For pre-built images `infotrend/coreai`
+- `<release>`: the release version in the form `YY` + `Alpha` + `Revision`; where `YY` is the year (ex: `25` for 2025), `Alpha` is the release version for the given year (incremental: `a`, `b`, ...) and `Revision` is the 2-digits revision for the released version (incremental: `01`, `02`, ...). This is a unique identifier for the release that is able to be alphanumerically sorted.
+- `<components>`: the components of the container image:
+  - `c` for CUDA, this implies a GPU build, while the lack of it is a CPU build
+  - `t` for TensorFlow
+  - `p` for PyTorch
+  - `o` for OpenCV
+- `<versions>`: the versions of the components, `_` separated, in the order of the `<components>`
+- `<extras>`: the extras of the container image, `-` separated
+  - `-built`: for built TensorFlow/PyTorch. The lack of this is for pip installation. OpenCV is always built.
+  - `-tensorrt`: for TensorRT support
 
-Similarly, `infotrend/CoreAI-jupyter-cuda_tensorflow_pytorch_opencv-unraid:11.8.0_2.12.0_2.0.1_4.7.0-20231120` can be read as:
-- `base name`=`infotrend/CoreAI-`
-- `feature1` = `jupyter`
-- `component1` + `component1_version` = `cuda` `11.8.0`
-- `component2` + `component2_version` = `tensorflow` `2.12.0`
-- `component3` + `component3_version` = `pytorch` `2.0.1`
-- `component4` + `component4_version` = `opencv` `4.7.0`
-- `feature2` = `unraid`
-- `release`=`20231120`
- "Infotrend's CoreAI release 20231120 with a Jupyter Lab and Unraid specific components with PyTorch 2.0.1, OpenCV 4.7.0 and GPU (CUDA) support."
+For example `infotrend/coreai:25a01-tpo-2.18.1_2.6.0_4.11.0` can be read as:
+- `basename` is `infotrend/coreai`, an image obtained from Infotrend's DockerHub.
+- `release` is `25a01`, the release version: `25` for 2025, `a` for the first release of the year, `01` for the first revision of the release.
+- `components` is `tpo`, `t` for TensorFlow, `p` for PyTorch, `o` for OpenCV. This is a CPU build, since no `c` for CUDA is present.
+- `versions` is `2.18.1_2.6.0_4.11.0`; `2.18.1` for TensorFlow (`pip3` installed), `2.6.0` for PyTorch (`pip3` installed), `4.11.0` for OpenCV (built).
 
-There will be a variable number of components or features in the full container name as shown above. 
-It is left to the end user to follow the naming convention.
+Similarly, `coreai:25a01-ctpo-12.6.3_2.18.1_2.6.0_4.11.0-built-tensorrt`:
+- `basename` is `coreai`, an image built from the local build process.
+- `release` is `25a01`, the release version: `25` for 2025, `a` for the first release of the year, `01` for the first revision of the release.
+- `components` is `ctpo`, `c` for CUDA, `t` for TensorFlow, `p` for PyTorch, `o` for OpenCV. This is a GPU build, since `c` for CUDA is present.
+- `versions` is `12.6.3_2.18.1_2.6.0_4.11.0`; `12.6.3` for CUDA, `2.18.1` for TensorFlow (built per the presence of `-built` in `extras`), `2.6.0` for PyTorch (also built), `4.11.0` for OpenCV (built).
+- `extras` is `-built` and `-tensorrt`:
+  - `-built` for built TensorFlow/PyTorch, 
+  - `-tensorrt` for TensorRT support.
 
 ## 1.2. Building
 
-There are two methods to build local containers:
+There are two possible methods to build local containers:
 1. when building multiple versions of the container or to have a dedicated Docker `buildx` builder used; we recommend using the `Makefile`
-2. when building a specific version of the container; use the matching  `BuildDetails/<RELEASE>/<COMPONENTS>-<COMPONENTS_VERSIONS>-<RELEASE>/Dockerfile`
+2. when building a specific version of the container; use the matching  `BuildDetails/<release>/<components>-<versions>[<extras>]`
 
-When using the `Makefile` method: we will use the `make` command to generate the content of the `BuildDetails` directory which will place all files required for building the container within that directory. For a `20241219` release, for `pytorch_opencv` a `BuildDetails/20241219/pytorch_opencv-2.5.1_4.10.0-20241219` directory (following the naming convention) is created and contains the build artifacts including a `Dockerfile` 
+When using the `Makefile` method: we will use the `make` command to generate the content of the `BuildDetails` directory which will place all files required for building the container within the build specific folder. For a `25a01` release, for `po` a `BuildDetails/25a01/po-2.6.0_4.11.0` directory (following the naming convention) is created and contains the build artifacts including a `Dockerfile`.
 
-When using the `BuildDetails/<RELEASE>/<COMPONENTS>-<COMPONENTS_VERSIONS>-<RELEASE>/Dockerfile` method: we can build the container using the files within that directory.
+When using the `BuildDetails/<release>/<components>-<versions>[<extras>]/Dockerfile` method: we can build the container using the files within that directory.
 
 ### 1.2.1. A note on build: time & space
 
-Building the containers requires the docker build step to have internet access. The process is CPU and Memory intensive and will require storage space for the build and the final image.
-For reference, on a system with an AMD 5950x (16-cores, ie `NUMPROC=32`), 128GB of memory and NVMe-based storage, the build time of `make build_tpo build_CoreAI build_CoreAI_tensort` (for the `20241219` release) --ie making use of layers caching when possible-- was about 60 minutes for the `tensorflow_opencv` or `pytorch_opencv` containers (about 7GB each), about 80 minutes for `tensorflow_pytorch_opencv` (about 8GB), close to 130 minutes (and a 17GB container) for `cuda_tensorflow_opencv`, over 200 minutes (also 17GB) for `cuda_pytorch_opencv`, over 220 minutes (for a 19GB container) for  `cuda_tensorflow_pytorch_opencv`. The `TensorRT` variant took 240 minutes to build and its image size is close to 30GB.
-
-When generating all images, there is about 100GB of reclaimable space generated by Docker `buildx`.
+Building the containers requires the docker build step to have internet access. The process is CPU, RAM and storage space intensive and will require storage space for the build step and for the final image (the largest image is about 40GB, close to 100GB of reclaimable space is generated by Docker `buildx`)
 
 For example, when building the `25a01` release, the following is a table generated from the output of the `docker image ls` command to illustrate disk usage:
 
-| TAG | SIZE |
-|---|---|
-| 25a01-ctpo-12.6.3_2.18.1_2.6.0_4.11.0-built-tensorrt | 36.1GB | 
-| 25a01-ctpo-12.6.3_2.18.1_2.6.0_4.11.0-built | 19.9GB |
-| 25a01-ctpo-12.6.3_2.18.1_2.6.0_4.11.0 | 24.5GB |
-| 25a01-cpo-12.6.3_2.6.0_4.11.0 | 19.9GB |
-| 25a01-cto-12.6.3_2.18.1_4.11.0 | 19.5GB |
-| 25a01-tpo-2.18.1_2.6.0_4.11.0-built | 8.19GB |
-| 25a01-tpo-2.18.1_2.6.0_4.11.0 | 8.16GB |
-| 25a01-po-2.6.0_4.11.0 | 6.21GB |
-| 25a01-to-2.18.1_4.11.0 | 7.32GB |
+| TAG | SIZE | Estimated build time |
+| --- | --- | --- |
+| 25a01-ctpo-12.6.3_2.18.1_2.6.0_4.11.0-built-tensorrt | 36.1GB | 300 minutes | 
+| 25a01-ctpo-12.6.3_2.18.1_2.6.0_4.11.0-built | 19.9GB | 240 minutes |
+| 25a01-ctpo-12.6.3_2.18.1_2.6.0_4.11.0 | 24.5GB | 40 minutes |
+| 25a01-cpo-12.6.3_2.6.0_4.11.0 | 19.9GB | 30 minutes |
+| 25a01-cto-12.6.3_2.18.1_4.11.0 | 19.5GB | 30 minutes |
+| 25a01-tpo-2.18.1_2.6.0_4.11.0-built | 8.19GB | 80 minutes |
+| 25a01-tpo-2.18.1_2.6.0_4.11.0 | 8.16GB | 15 minutes |
+| 25a01-po-2.6.0_4.11.0 | 6.21GB | 10 minutes |
+| 25a01-to-2.18.1_4.11.0 | 7.32GB | 10 minutes |
+
+The build time is estimated from local builds of all listed containers on a system with an AMD 5950x (16-cores, `NUMPROC=32`), NVIDIA RTX 4090 and 128GB of RAM. 
+Your build time may vary. but those values provide some idea of scale and time complexities of the build process.
 
 ###  1.2.2. Building (using Makefile)
 
-This method is a per-release method, as it will generate a build specific `Dockerfile` 
+When building multiple versions of the container or to have a dedicated Docker `buildx` builder used; we recommend using the `Makefile`.
+This method will generate a build specific `Dockerfile` 
 
 Type `make` to get the list of targets and some details of the possible builds.
 
-It is possible to adapt the content of the `Makefile` to build custom solutions. For example, the default is not to build OpenCV non-free or build FFmpeg with libnpp, as those would make the images unredistributable and any release on our Dockerhub is made with "redistributable" packages.
+It is possible to adapt the content of the `Makefile` to build custom solutions. 
+For example, the default is not to build OpenCV non-free or build FFmpeg with libnpp, as those would make the images unredistributable and any release on our Dockerhub is made with "redistributable" packages (see `CoreAI_ENABLE_NONFREE`). 
+It is also possible to modify the `DNN_ARCH_CUDA` or `DNN_ARCH_TORCH` variables to build for a specific GPU architecture (compared to building for a range of architectures).
 
-We will see the result of this command for the `20241219` release:
+We will see the result of this command for the `25a01` release:
 
-```
-**** Docker Image tag ending: 20241219
+```text
+**** CoreAI Docker Image tag ending: 25a01
 **** Docker Runtime: GPU
   To switch between GPU/CPU: add/remove "default-runtime": "nvidia" in /etc/docker/daemon.json then run: sudo systemctl restart docker
 
-*** Available Docker images to be built (make targets):
-  build_tpo (requires CPU Docker runtime):
-    tensorflow_opencv OR pytorch_opencv OR tensorflow_pytorch_opencv (aka TPO, for CPU):
-      tensorflow_opencv-2.18.0_4.10.0
-      pytorch_opencv-2.5.1_4.10.0
-      tensorflow_pytorch_opencv-2.18.0_2.5.1_4.10.0
-  build_CoreAI (requires GPU Docker runtime):
-    cuda_tensorflow_opencv OR cuda_pytorch_opencv OR cuda_tensorflow_pytorch_opencv (aka CoreAI, for NVIDIA GPU):
-      cuda_tensorflow_opencv-12.5.1_2.18.0_4.10.0
-      cuda_pytorch_opencv-12.5.1_2.5.1_4.10.0
-      cuda_tensorflow_pytorch_opencv-12.5.1_2.18.0_2.5.1_4.10.0
-  build_CoreAI_tensorrt (requires GPU Docker runtime):
-    cuda_tensorflow_pytorch_opencv (aka CoreAI, for NVIDIA GPU with TensorRT): same as cuda_tensorflow_pytorch_opencv but installing TensorRT libraries
-      Note:TensorRT is not supported by TensorFlow since 2.18.0
+ Tag naming convention: [CoreAI_Release] - [COMPONENTS] - [[CUDA_version _]? [Tensorflow_version _]?  [PyTorch_version _]? [OpenCV_version]] [-tensorrt] [-built]
+   CoreAI_Release: 25a01 ( YY + release letter (a, b, ...) for given year) + release revision
+   Components: c=cuda t=tensorflow p=pytorch o=opencv
+   Versions: versions of the selected components, separated by underscores
+   TensorRT support: requires GPU and "-built"
+   "-built" for built TensorFlow/PyTorch, "" for pip installation
 
-*** Jupyter Labs ready containers (requires the base TPO & CoreAI container to either be built locally or docker will attempt to pull otherwise)
-  jupyter_tpo:
-      jupyter-tensorflow_pytorch_opencv-2.18.0_2.5.1_4.10.0
-  jupyter_CoreAI:
-      jupyter-cuda_tensorflow_pytorch_opencv-12.5.1_2.18.0_2.5.1_4.10.0
+*** Available CoreAI Docker images to be built (make targets):
+
+  pip_tpo_all -- pip for CPU:
+    pip_to OR pip_po OR pip_tpo :
+      25a01-to-2.18.1_4.11.0
+      25a01-po-2.6.0_4.11.0
+      25a01-tpo-2.18.1_2.6.0_4.11.0
+  pip_ctpo_all -- pip for GPU:
+    pip_cto OR pip_cpo OR pip_ctpo :
+      25a01-cto-12.6.3_2.18.1_4.11.0
+      25a01-cpo-12.6.3_2.6.0_4.11.0
+      25a01-ctpo-12.6.3_2.18.1_2.6.0_4.11.0
+  build_pip: pip_tpo_all pip_ctpo_all
+
+  blt_tpo_all -- built for CPU:
+    blt_tpo :
+      25a01-tpo-2.18.1_2.6.0_4.11.0-built
+  blt_ctpo_all -- built for GPU:
+    blt_ctpo :
+      25a01-ctpo-12.6.3_2.18.1_2.6.0_4.11.0-built
+  build_blt: blt_tpo_all blt_ctpo_all
+
+  blt_ctpo_tensorrt -- built with TensorRT support:
+      25a01-ctpo-12.6.3_2.18.1_2.6.0_4.11.0-built-tensorrt
+
+  build_all: build ALL previously listed targets
 ```
 
-In this usage are multiple sections:
-- The `Docker Image tag ending` matches the software release tag.
-- The `Docker Runtime` explains the current default runtime. For `GPU` (CoreAI) builds it is recommended to add `"default-runtime": "nvidia"` in the `/etc/docker/daemon.json` file and restart the docker daemon. Similarly, for `CPU` (TPO) builds, it is recommended that the `"default-runtime"` should be removed (or commented,) but because switching runtime on a system is not always achievable, we will use `NVIDIA_VISIBLE_DEVICES=void` ([details](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/docker-specialized.html).) We can check the current status of the docker runtime by running: `docker info | grep "Default Runtime"`
-- The `Available Docker images to be built` section allows us to select the possible build targets. For `GPU`, the `cuda_` variants. For `CPU` the non `cuda_` variants. Naming conventions and tags follow the guidelines specified in the "Tag naming conventions" section.
-- The `Jupyter Labs ready containers` are based on the containers built in the "Available Docker images[...]" and adding a running "Jupyter Labs" following the specific `Dockerfile` in the `Jupyter_build` directory. The list of built containers is limited to the most components per `CPU` and `GPU` to simplify distribution.
+Those follow the description of the tag naming convention.
+For `make` purpose, we differentiate from `pip3` and `built` by the suffixes `pip_` and `blt_`.
+For example, `make pip_tpo` will build the `25a01-tpo-2.18.1_2.6.0_4.11.0` image, `make blt_ctpo_all` will build the all the `blt_ctpo` images --here, only one-- the  `25a01-ctpo-12.6.3_2.18.1_2.6.0_4.11.0-built` image and `make blt_ctpo_tensorrt` will build the `25a01-ctpo-12.6.3_2.18.1_2.6.0_4.11.0-built-tensorrt` image.
 
+Each requested build will create/replace the `Dockerfile` in the matching `BuildDetails/<release>/<components>-<versions>[<extras>]` folder. For example, `make blt_ctpo_tensorrt` will create/replace the `Dockerfile` in the `BuildDetails/25a01/ctpo-12.6.3_2.18.1_2.6.0_4.11.0-built-tensorrt` folder.
 
+In addition to the `Dockerfile`, the `make` method will copy required components within the matching `BuildDetails` folder (`*.sh` scripts), run a minimum set of tests to confirm a successful build (see the `*.testlog` files in the folder where the `Makefile` is) and generate some post build artifacts that details the installed components (the `*.txt` files in the `Dockerfile` location).
 
-Note: Local builds will not have the `infotrend/CoreAI-` added to their base name as those are only for release to Docker hub by maintainers.
+Note: Local builds will not have the `infotrend/` added to their base name as those are only for release to Docker hub by maintainers.
 
 ###  1.2.3. Building (using Dockerfile)
 
-Each time we request a specific `make` target, a dedicated `Dockerfile` is built in the `BuildDetails/<release>/<target>` directory.
+As detailled in the previous section, each time we request a specific `make` target, a dedicated `Dockerfile` is built in the `BuildDetails/<release>/<components>-<versions>[<extras>]` folder.
 
-That `Dockerfile` contains `ARG` and `ENV` values that match the specific build parameters.
-For example in release `20241219`, when building the `tensorflow_opencv` target, the `BuildDetails/20241219/tensorflow_opencv-2.18.0_4.10.0-20241219/Dockerfile` is created and used to build the `tensorflow_opencv:2.18.0_4.10.0-20241219` container image.
-In that file, we will see content such as:
+Each `Dockerfile` contains `ARG` and `ENV` values that match the specific build parameters.
+
+Those `Dockerfile` can be used directly by developers to build and integrate their modifications to build a specific feature.
+
+When the maintainers upload this image to Dockerhub, that image will be preceded by `infotrend/`.
+
+When choosing to build a container image on specific hardware, please be patient, building any of those images might take a long time (counted in hours for `-built` images).
+
+To build a local image this way, find the corresponding `Dockerfile` and in the directory where the file is located: `docker build -f Dockerfile --tag custombuild:local .`
+
+For example, to build the `BuildDetails/25a01/25a01-po-2.6.0_4.11.0/Dockerfile` and tag it as `po:local`, run:
 ```
-ARG CoreAI_FROM=ubuntu:24.04
-FROM ${CoreAI_FROM}
-[...]
-## Download & Building TensorFlow from source in same RUN
-ENV LATEST_BAZELISK=1.22.1
-ENV CoreAI_TENSORFLOW_VERSION=2.18.0
-ENV CoreAI_TF_CONFIG=""
-ENV TF_CUDA_COMPUTE_CAPABILITIES=""  
-[...]
-# No Magma (PyTorch GPU only)
-
-# No PyTorch, Torch Audio or Torch Video
-[...]
-```
-, which is specific to the CPU build of TensorFlow and OpenCV (without PyTorch).
-
-This `Dockerfile` can be used directly by developers to build and integrate their modifications to build a specific feature.
-
-When the maintainers upload this image to Dockerhub, that image will be preceded by `infotrend/CoreAI-`.
-
-When choosing to build a container image on specific hardware, please be patient, building any of those images might take a long time (counted in hours).
-To build it this way, find the corresponding `Dockerfile` and in the directory where the file is located: `docker build -f Dockerfile --tag custombuild:local .`
-
-For example, to build the `BuildDetails/20241219/tensorflow_opencv-2.18.0_4.10.0-20241219/Dockerfile` and tag it as `to:test`, run:
-```
-% cd BuildDetails/20241219/tensorflow_opencv-2.18.0_4.10.0-20241219
-% docker build -f Dockerfile --tag to:test .
+% cd BuildDetails/25a01/25a01-po-2.6.0_4.11.0
+% docker build -f Dockerfile --tag po:local .
 ```
 
 > ℹ️ When using an existing `Dockerfile`, please update the `ARG CoreAI_NUMPROC=` line with the value of running the `nproc --all` command.
-> The value in the `Dockerfile` reflects the build as it was performed for release to Docker Hub and might not represent the build system.
+> The value in the `Dockerfile` reflects the build as it was performed for testing.
 
 The `Makefile` contains most of the variables that define the versions of the different frameworks.
 The file has many comments that allow developers to tailor the build.
 
-For example, any release on our Dockerhub is made with "redistributable" packages, the `CoreAI_ENABLE_NONFREE` variable in the `Makefile` controls that feature: 
-> `The default is not to build OpenCV non-free or build FFmpeg with libnpp, as those would make the images unredistributable.`
-> `Replace "free" by "unredistributable" if you need to use those for a personal build`
-
 ##  1.3. Available builds on DockerHub
 
-The `Dockerfile` used for a Dockerhub pushed built is shared in the `BuildDetails` directory (see the [Dockerfile](#Dockerfile) section above)
+The `Dockerfile` used for a Dockerhub pushed built is shared in the `BuildDetails` directory.
+Only builds that are not `-built` or `-tensorrt` are available on Dockerhub.
 
 We will publish releases into [Infotrend Inc](https://hub.docker.com/r/infotrend/)'s Docker Hub account.
 There you can find other releases from Infotrend.
 
 The tag naming reflects the [Tag naming conventions](#Tagnamingconventions) section above.
-`latest` is used to point to the most recent release for a given container image.
 
-The different base container images that can be found there are:
-- CPU builds:
-  - https://hub.docker.com/r/infotrend/CoreAI-tensorflow_opencv
-  - https://hub.docker.com/r/infotrend/CoreAI-pytorch_opencv
-  - https://hub.docker.com/r/infotrend/CoreAI-tensorflow_pytorch_opencv
-- GPU builds:
-  - https://hub.docker.com/r/infotrend/CoreAI-cuda_tensorflow_opencv
-  - https://hub.docker.com/r/infotrend/CoreAI-cuda_pytorch_opencv
-  - https://hub.docker.com/r/infotrend/CoreAI-cuda_tensorflow_pytorch_opencv
-- Jupyter Lab CPU & GPU builds:
-  - https://hub.docker.com/r/infotrend/CoreAI-jupyter-tensorflow_pytorch_opencv
-  - https://hub.docker.com/r/infotrend/CoreAI-jupyter-cuda_tensorflow_pytorch_opencv
-- Unraid enabled Jupyter Lab, CPU & GPU builds:
-  - https://hub.docker.com/r/infotrend/CoreAI-jupyter-tensorflow_pytorch_opencv-unraid
-  - https://hub.docker.com/r/infotrend/CoreAI-jupyter-cuda_tensorflow_pytorch_opencv-unraid
+`latest` is used to point to the most recent release of the `ctpo` build.
 
-### 1.3.1. TensorRT build
-
-Note that we are not releasing TensorRT based containers on DockerHub. We provide a `Dockerfile` in the corresponding `BuildDetails` (ending in `-TensoRT`) for local builds, follow the "Building (using Dockerfile)" instructions to build the container.
-
-We can check the TensorRT Python version present in the locally built container by:
-
-```bash
-% docker run --gpus all --rm -it cuda_tensorflow_pytorch_opencv:12.5.1_2.18.0_2.5.1_4.10.0-20241219-TensorRT
-# python3
->>> import tensorrt
->>> print(tensorrt.__version__)
-10.7.0
-```
+The different base container images that can be found there are all in the https://hub.docker.com/r/infotrend/coreai repository.
+The tag naming convention is the same as the one used in the [Tag naming conventions](#Tagnamingconventions) section above.
 
 ##  1.4. Build Details
 
 The [`README-BuildDetails.md`](README-BuildDetails.md) file is built automatically from the content of the `BuildDetails` directory and contains links to different files stored in each sub-directory.
 
 It reflects each build's detailed information, such as (where relevant) the Docker tag, version of CUDA, cuDNN, TensorFlow, PyTorch, OpenCV, FFmpeg and Ubuntu. Most content also links to sub-files that contain further insight into the system package, enabled build parameters, etc.
-
-##  1.5. Jupyter build
-
-Jupyter Lab containers are built `FROM` the `tensorflow_pytorch_opencv` or `cuda_tensorflow_pytorch_opencv` containers.
-
-A "user" version (current user's UID and GID are passed to the internal user) can be built using `make JN_MODE="-user" jupyter_tpo jupyter_CoreAI`.
-
-The specific details of such builds are available in the `Jupyter_build` directory, in the `Dockerfile` and `Dockerfile-user` files.
-
-The default Jupyter Lab's password (`iti`) is stored in the `Dockerfile` and can be modified by the builder by replacing the `--IdentityProvider.token='iti'` command line option.
-
-When using the Jupyter-specific container, it is important to remember to expose the port used by the tool (here: 8888), as such in the `docker run` command, make sure to add `-p 8888:8888` to the command line.
-
-Pre-built containers are available, see the [Available builds on DockerHub](#AvailablebuildsonDockerHub) section above.
-
-##  1.6. Unraid build
-
-Those are specializations of the Jupyter Lab's builds, and container images with a `sudo`-capable `jupyter` user using Unraid's specific `uid` and `gid` and the same default `iti` Jupyter Lab's default password.
-
-The Unraid version can be built using `make JN_MODE="-unraid" jupyter_tpo jupyter_CoreAI`.
-
-The build `Dockerfile` is `Jupyter_build/Dockerfile-unraid`.
-
-Pre-built containers are available, see the [Available builds on DockerHub](#AvailablebuildsonDockerHub) section above.
 
 #  2. Usage and more
 
@@ -298,7 +302,7 @@ A minimum Nvidia driver version is needed to run the CUDA builds.
 Not all GPUs are supported in the Docker Hub builds. 
 The containers are built for "compute capability (version)" (as defined in the [GPU supported](https://en.wikipedia.org/wiki/CUDA#GPUs_supported) Wikipedia page) of 6.0 and above (ie Pascal and above). 
 
-If we need a different GPU compute capability, we can edit the `Makefile` and alter the various `DNN_ARCH_` matching the one that we need to build and add the needed architecture. Then type `make` to see the entire list of containers that the release we have obtained can build and use the exact tag that we want to build to build it locally (on Ubuntu, we will need `docker` and `build-essential` installed --at least-- to do this). 
+If you need a different GPU compute capability, we can edit the `Makefile` and alter the various `DNN_ARCH_` matching the one that we need to build and add the needed architecture. Then type `make` to see the entire list of containers that the release we have obtained can build and use the exact tag that we want to build to build it locally (on Ubuntu, we will need `docker` and `build-essential` installed --at least-- to do this). 
 Building a container image takes a lot of CPU and can take multiple hours, so we recommend to build only the target needed.
 
 ##  2.2. Using the container images
