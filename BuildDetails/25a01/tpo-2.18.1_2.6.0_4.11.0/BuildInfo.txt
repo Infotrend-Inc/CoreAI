@@ -1,0 +1,16 @@
+
+CoreAI_FROM=ubuntu:24.04
+CoreAI_BUILD=CPU
+CoreAI_TENSORFLOW_VERSION=2.18.1
+CoreAI_PYTORCH_VERSION=2.6.0
+CoreAI_CUDA_VERSION=None
+CoreAI_OPENCV_VERSION=4.11.0
+CoreAI_RELEASE=25a01
+FOUND_UBUNTU=24.04
+OpenCV_built=4.11.0
+TensorFlow_pip=2.18.1
+FFmpeg_built=7.1.1
+PyTorch_pip=2.6.0+cpu
+TorchVision_pip=0.21.0+cpu
+TorchAudio_pip=2.6.0+cpu
+TorchData_pip=0.11.0+cpu

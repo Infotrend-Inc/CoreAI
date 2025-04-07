@@ -1,0 +1,24 @@
+  CoreAI_FROM               : nvidia/cuda:12.6.3-devel-ubuntu24.04
+cd BuildDetails/25a01/ctpo-12.6.3_2.18.1_2.6.0_4.11.0
+docker buildx ls | grep -q CoreAI-25a01_builder && echo "builder already exists -- to delete it, use: docker buildx rm CoreAI-25a01_builder" || docker buildx create --name CoreAI-25a01_builder --driver-opt env.BUILDKIT_STEP_LOG_MAX_SIZE=256000000
+docker buildx use CoreAI-25a01_builder || exit 1
+BUILDX_EXPERIMENTAL=1  docker buildx debug --on=error build --progress plain --platform linux/amd64  \
+  --build-arg CoreAI_NUMPROC="32" \
+  --tag="coreai:25a01-ctpo-12.6.3_2.18.1_2.6.0_4.11.0" \
+  -f Dockerfile \
+  --load \
+  .
+
+
+***** TensorFlow configuration:
+--- Tensorflow -- PIP Installed: 2.18.1
+
+*** Tensorflow version   :  2.18.1
+*** TF Builf with cuda   :  True
+*** TF compile flags     :  ['-I/usr/local/lib/python3.12/dist-packages/tensorflow/include', '-D_GLIBCXX_USE_CXX11_ABI=1', '--std=c++17', '-DEIGEN_MAX_ALIGN_BYTES=64']
+*** TF include           :  /usr/local/lib/python3.12/dist-packages/tensorflow/include
+*** TF lib               :  /usr/local/lib/python3.12/dist-packages/tensorflow
+*** TF link flags        :  ['-L/usr/local/lib/python3.12/dist-packages/tensorflow', '-l:libtensorflow_framework.so.2']
+*** Keras version        :  3.9.2
+*** pandas version       :  2.2.3
+*** scikit-learn version :  1.6.1
