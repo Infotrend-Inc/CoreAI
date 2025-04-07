@@ -454,6 +454,18 @@ docker_tag_push_core:
 			docker push $${image_name}; \
 		fi; \
 	done
+	@DO_UPLOAD="${DO_UPLOAD}" make docker_tag_latest_push
+
+# Tag CTPO_PIP as latest
+docker_tag_latest_push:
+	@echo "Tagging image ${CoreAI_BASENAME}:${CTPO_PIP} as ${TAG_RELEASE}${CoreAI_BASENAME}:latest"
+	@docker tag ${CoreAI_BASENAME}:${CTPO_PIP} ${TAG_RELEASE}${CoreAI_BASENAME}:latest
+	@if [ "A${DO_UPLOAD}" == "Ayes" ]; then \
+		echo "++ Tagging then uploading tags to docker hub (no build) -- Press Ctl+c within 5 seconds to cancel -- will only work for maintainers"; \
+		for i in 5 4 3 2 1; do echo -n "$$i "; sleep 1; done; echo ""; \
+		docker push ${TAG_RELEASE}${CoreAI_BASENAME}:latest; \
+	fi
+
 
 ## Maintainers:
 # - Create a new branch on GitHub that match the expected release tag, pull and checkout that branch
