@@ -25,7 +25,7 @@ The tool's aim is to enable developers, ML and CV enthusiasts to build and test 
 
 We have published examples of use of the tool to support efforts in Computer Vision, Data Science, Machine Learning and Natural Language Processing.
 
-Go to https://github.com/Infotrend-Inc/CoreAI-Demo_Projects for details.
+Go to https://github.com/Infotrend-Inc/CoreAI-DemoProjects for details.
 
 - [1. Container Usage](#1-container-usage)
   - [1.1. Tag naming conventions](#11-tag-naming-conventions)
