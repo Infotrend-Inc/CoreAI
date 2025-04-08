@@ -1,0 +1,20 @@
+# Generated files
+*.html
+*.list
+*.filelist
+*.sollist
+*.log
+*.log.temp
+*.patch.temp
+*.testlog
+*.cmd
+
+# Backup files
+*.bak
+
+# Mac cache
+.DS_Store
+
+# Temp
+#BuildDetails/25a01
+

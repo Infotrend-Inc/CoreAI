@@ -1,0 +1,28 @@
+services:
+  coreai:
+    container_name: coreai-ctpo
+    image: infotrend/coreai:latest
+    restart: unless-stopped
+    command: /run_jupyter.sh
+    ports:
+      - 8888:8888
+    volumes:
+      - ./iti:/iti
+    environment:
+      # User ID and Group ID for the coreai user should be set to the values of the user running the command (obtain with `id -u` and `id -g`). We are using 1000:1000 here for illustration purposes.
+      - WANTED_UID=1000
+      - WANTED_GID=1000
+      - CoreAI_VERBOSE="yes"
+      - TZ="America/New_York"
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities:
+                - gpu
+                - compute
+                - utility

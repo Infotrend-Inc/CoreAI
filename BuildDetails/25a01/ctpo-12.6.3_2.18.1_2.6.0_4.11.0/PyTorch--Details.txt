@@ -1,0 +1,40 @@
+  CoreAI_FROM               : nvidia/cuda:12.6.3-devel-ubuntu24.04
+cd BuildDetails/25a01/ctpo-12.6.3_2.18.1_2.6.0_4.11.0
+docker buildx ls | grep -q CoreAI-25a01_builder && echo "builder already exists -- to delete it, use: docker buildx rm CoreAI-25a01_builder" || docker buildx create --name CoreAI-25a01_builder --driver-opt env.BUILDKIT_STEP_LOG_MAX_SIZE=256000000
+docker buildx use CoreAI-25a01_builder || exit 1
+BUILDX_EXPERIMENTAL=1  docker buildx debug --on=error build --progress plain --platform linux/amd64  \
+  --build-arg CoreAI_NUMPROC="32" \
+  --tag="coreai:25a01-ctpo-12.6.3_2.18.1_2.6.0_4.11.0" \
+  -f Dockerfile \
+  --load \
+  .
+
+
+***** PyTorch configuration:
+--- PyTorch: PIP Installed
+2.6.0+cu126
+
+
+***** TorchVision configuration:
+--- PyTorch: PIP Installed
+0.21.0+cu126
+
+
+***** TorchAudio configuration:
+--- PyTorch: PIP Installed
+2.6.0+cu126
+
+
+***** TorchData configuration:
+--- PyTorch: PIP Installed
+0.11.0+cpu
+
+
+
+ ##### PyTorch: Version and Device check #####
+
+
+*** PyTorch version      :  2.6.0+cu126
+   *** PyTorch Audio     :  2.6.0+cu126
+   *** PyTorch Vision    :  0.21.0+cu126
+   *** PyTorch Data      :  0.11.0+cpu

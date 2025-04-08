@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<Container version="2">
+    <Name>CoreAI</Name>
+    <Repository>infotrend/coreai</Repository>
+    <Registry>https://hub.docker.com/r/infotrend/coreai</Registry>
+    <Support>https://github.com/Infotrend-Inc/CoreAI</Support>
+    <Project>https://github.com/Infotrend-Inc/CoreAI</Project>
+    <TemplateURL>https://github.com/Infotrend-Inc/CoreAI/main/assets/Infotrend-CoreAI.xml</TemplateURL>
+    <Icon>https://github.com/Infotrend-Inc/CoreAI/blob/main/assets/Infotrend_LogoOnly.png?raw=true</Icon>
+    <Category>AI: Productivity:</Category>
+    <ExtraSearchTerms>CTPO CUDA TensorFlow PyTorch OpenCV</ExtraSearchTerms>
+    <Network>bridge</Network>
+    <Requires>**Nvidia Driver plugin**</Requires>
+    <MyIP/>
+    <Shell>bash</Shell>
+    <Privileged>false</Privileged>
+    <Overview>
+CoreAI is a containerized development environment for AI and machine learning projects.&#xD;
+&#xD;
+This is a Unraid compatible Jupyter Lab (Python kernel) container with GPU-optimized Tensorflow, PyTorch and OpenCV.&#xD;
+&#xD;
+The default password to access the Jupyter Lab is iti&#xD;
+&#xD;
+Please note that the container images is large at over 20GB &#xD;
+To use it requires the Nvidia driver installation on your Unraid server for support of Docker. &#xD;
+This installation needs to support the version of CUDA installed to use with this container.&#xD;
+If you have multiple GPUs in your system with some allocated to VMs, make sure to replace --gpus all with --runtime=nvidia and add the NVIDIA_DRIVER_CAPABILITIES and NVIDIA_VISIBLE_DEVICES environment variables to only give the container access to selected GPUs.&#xD;
+&#xD;
+The container is run as the `coreai` user within the container matching the user ID and group ID set using the `WANTED_UID` and `WANTED_GID` environment variables.&#xD;
+&#xD;
+Please see https://github.com/Infotrend-Inc/CoreAI for further details.&#xD;
+&#xD;
+Note:&#xD;
+- The container requires the Nvidia Driver plugin to be installed on your Unraid server. Usually that plugin will get you access to a CUDA driver with support for the latest tag available for this container.&#xD;
+- This is a WebUI for the CoreAI tool with a Docker image of usually over 20GB.&#xD;
+    </Overview>
+    <Readme>https://github.com/Infotrend-Inc/CoreAI</Readme>
+    <Date>2025-04-08</Date>
+    <Changes>
+### 25a01
+- Initial release: CUDA 12.6.3, Ubuntu 24.04, PyTorch 2.6.0, TensorFlow 2.18.1, OpenCV 4.11.0
+    </Changes>
+    <WebUI>http://[IP]:[PORT:8888]</WebUI>
+    <ExtraParams>--runtime nvidia --gpus all</ExtraParams>
+    <PostArgs>/run_jupyter.sh</PostArgs>
+    <CPUset/>
+    <DateInstalled/>
+    <DonateText/>
+    <DonateLink/>
+    <Config Name="WebUI Port" Target="8888" Default="8888" Mode="tcp" Description="" Type="Port" Display="always" Required="true" Mask="false">8888</Config>
+    <Config Name="Jupyter run directory" Target="/iti" Default="/mnt/user/appdata/coreai/iti" Mode="rw" Description="" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/coreai/iti</Config>
+    <Config Name="WANTED_UID" Target="WANTED_UID" Default="99" Mode="" Description="UID to use for content in run directory" Type="Variable" Display="always" Required="true" Mask="false">99</Config>
+    <Config Name="WANTED_GID" Target="WANTED_GID" Default="100" Mode="" Description="GID to use for content in run directory" Type="Variable" Display="always" Required="true" Mask="false">100</Config>
+    <Config Name="CoreAI_VERBOSE" Target="CoreAI_VERBOSE" Default="yes" Mode="" Description="Set to yes to enable verbose output (delete the variable to disable verbosity)" Type="Variable" Display="advanced" Required="true" Mask="false">yes</Config>
+</Container>
