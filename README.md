@@ -54,15 +54,10 @@ The CoreAI project aims to address the following challenges and provide solution
 - **Unraid**: CoreAI containers can be run on [Unraid](https://unraid.net/), a container management platform that provides a user-friendly interface for managing Docker containers.
 - **`-built` builds**: It is possible to create local builds and compile TensorFlow and PyTorch from source. Shared builds use the offical `pip` packages.
 - **TensorRT**: CoreAI containers can be built locally with TensorRT support (only GPU builds).
-- **Available Builds**: We are providing pre-built containers from Infotrend Inc.'s Docker account at https://hub.docker.com/r/infotrend/. Those are not the `-built` or `-tensorrt` version.
+- **Available Builds**: We are providing pre-built containers from Infotrend Inc.'s Docker account at https://hub.docker.com/r/infotrend/coreai. Those are not the `-built` or `-tensorrt` version.
 
 Building each container independently is made possible by the `Dockerfile` available in the `BuildDetails/<release>/<components>-<versions>[<extras>]` directories.
 Building each container takes resources and time (counted in many cores, GB of memory and build hours).
-
-Pre-built containers are available from Infotrend Inc.'s Docker account at https://hub.docker.com/r/infotrend/
-Details on the available container and build are discussed in this document.
-
-A Jupyter Lab and Unraid version of this WebUI-enabled version are also available on our Docker Hub and are using the same build process as the base container.
 
 Note: this tool was built earlier in 2023, iterations of its Jupyter Lab were made available to Infotrend's data scientists, and has been released in the past under different names. **CoreAI** is an evolution of those previous iterations.
 
@@ -148,7 +143,7 @@ For GPU-optimized versions, we recommend building on a host with the supported h
 Using a GPU requires the installation of the NVIDIA Container Toolkit found at https://github.com/NVIDIA/nvidia-container-toolkit
 Note that the NVIDIA video driver on the Linux host needs to support the version of CUDA that we are trying to build (we can see the supported CUDA version and driver version information when running the `nvidia-smi` command)
 
-Pre-built images are available for download on Infotrend's DockerHub (at https://hub.docker.com/r/infotrend/). 
+Pre-built images are available for download on Infotrend's DockerHub (at https://hub.docker.com/r/infotrend/coreai). 
 Those are built using the same method provided by the `Makefile` and the corresponding `Dockerfile` used for those builds is stored in the matching `BuildDetails/<release>/<components>-<versions>[<extras>]` folder.
 
 There are two possible methods to build local containers:
