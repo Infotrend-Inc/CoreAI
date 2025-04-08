@@ -4,11 +4,13 @@ To start the `latest` version of CoreAI with CUDA, TensorFlow, PyTorch and OpenC
 
 ```bash
 # podman command
-podman run --rm -it --userns=keep-id --device nvidia.com/gpu=all -e WANTED_UID=`id -u` -e WANTED_GID=`id -g` -e CoreAI_VERBOSE="yes" -v `pwd`:/iti -p 127.0.0.1:8888:8888 docker.io/infotrend/coreai:latest  /run_jupyter.sh
+podman run --rm -it --userns=keep-id --device nvidia.com/gpu=all -e WANTED_UID=`id -u` -e WANTED_GID=`id -g` -e CoreAI_VERBOSE="yes" -v `pwd`:/iti -p 127.0.0.1:8888:8888 docker.io/infotrend/coreai:latest /run_jupyter.sh
 
 # docker command
-docker run --rm -it --runtime=nvidia --gpus all -e WANTED_UID=`id -u` -e WANTED_GID=`id -g` -e CoreAI_VERBOSE="yes" -v `pwd`:/iti -p 127.0.0.1:8888:8888  infotrend/coreai:latest  /run_jupyter.sh
+docker run --rm -it --runtime=nvidia --gpus all -e WANTED_UID=`id -u` -e WANTED_GID=`id -g` -e CoreAI_VERBOSE="yes" -v `pwd`:/iti -p 127.0.0.1:8888:8888  infotrend/coreai:latest /run_jupyter.sh
 ```
+
+The default password for the JupyterLab is `iti`.
 
 <hr>
 <h1>CoreAI --
@@ -25,23 +27,22 @@ We have published examples of use of the tool to support efforts in Computer Vis
 
 Go to https://github.com/Infotrend-Inc/CoreAI-Demo_Projects for details.
 
-- [Container Usage](#container-usage)
-- [1. Builds and Notes](#1-builds-and-notes)
+- [1. Container Usage](#1-container-usage)
   - [1.1. Tag naming conventions](#11-tag-naming-conventions)
-  - [1.2. Building](#12-building)
-    - [1.2.1. A note on build: time \& space](#121-a-note-on-build-time--space)
-    - [1.2.2. Building (using Makefile)](#122-building-using-makefile)
-    - [1.2.3. Building (using Dockerfile)](#123-building-using-dockerfile)
-  - [1.3. Available builds on DockerHub](#13-available-builds-on-dockerhub)
-  - [1.4. Build Details](#14-build-details)
-- [2. Usage and more](#2-usage-and-more)
-  - [2.1. A note on supported GPU in the Docker Hub builds](#21-a-note-on-supported-gpu-in-the-docker-hub-builds)
-  - [2.2. Using the container images](#22-using-the-container-images)
-  - [2.3. Podman usage](#23-podman-usage)
-  - [2.4. docker compose](#24-docker-compose)
-  - [2.5. virtualenv for shared Jupyter Lab usage](#25-virtualenv-for-shared-jupyter-lab-usage)
-  - [2.6. Disabling GPUs when nvidia is the default Docker runtime](#26-disabling-gpus-when-nvidia-is-the-default-docker-runtime)
-- [3. Version History](#3-version-history)
+- [2. Building](#2-building)
+  - [2.1. Foreword: time \& space](#21-foreword-time--space)
+  - [2.2. Building methods](#22-building-methods)
+    - [2.2.1. Using Makefile](#221-using-makefile)
+    - [2.2.2. Using Dockerfile](#222-using-dockerfile)
+  - [2.3. Build Details](#23-build-details)
+  - [2.4. Available builds on DockerHub](#24-available-builds-on-dockerhub)
+- [3. FAQ](#3-faq)
+  - [3.1. A note on supported GPU in the Docker Hub builds](#31-a-note-on-supported-gpu-in-the-docker-hub-builds)
+  - [3.2. docker compose](#32-docker-compose)
+  - [3.3. Unraid](#33-unraid)
+  - [3.4. virtualenv for shared Jupyter Lab usage](#34-virtualenv-for-shared-jupyter-lab-usage)
+  - [3.5. Disabling GPUs when nvidia is the default Docker runtime](#35-disabling-gpus-when-nvidia-is-the-default-docker-runtime)
+- [4. Version History](#4-version-history)
 
 
 The CoreAI project aims to address the following challenges and provide solutions:
@@ -65,7 +66,7 @@ A Jupyter Lab and Unraid version of this WebUI-enabled version are also availabl
 
 Note: this tool was built earlier in 2023, iterations of its Jupyter Lab were made available to Infotrend's data scientists, and has been released in the past under different names. **CoreAI** is an evolution of those previous iterations.
 
-# Container Usage
+# 1. Container Usage
 
 Available environment variables:
 - `CoreAI_VERBOSE`: Set to `yes` to enable verbose output (remove the `-e CoreAI_VERBOSE="yes"` from the command line to disable verbose output)
@@ -102,21 +103,6 @@ Decomposing the command lines:
 - `infotrend/coreai:latest`: the image to use, use the tag that matches the build you want to use
 - `/run_jupyter.sh`: the script to run, which exists by default within the container image and will start a Jupyter Lab instance (with an `iti` password). When no script is specified, the container will start a `/bin/bash` session within the new container.
 
-
-#  1. Builds and Notes
-
-The base for those container images is pulled from Dockerhub's official `ubuntu:24.04` or `nvidia/cuda:[...]-devel-ubuntu24.04` images. 
-
-More details on the Nvidia base images are available at https://hub.docker.com/r/nvidia/cuda/
-In particular, please note that **By downloading these images, you agree to the terms of the license agreements for NVIDIA software included in the images**; with further details on DockerHub version from https://docs.nvidia.com/cuda/eula/index.html#attachment-a
-
-For GPU-optimized versions, we recommend building on a host with the supported hardware.
-Using a GPU requires the installation of the NVIDIA Container Toolkit found at https://github.com/NVIDIA/nvidia-container-toolkit
-Note that the NVIDIA video driver on the Linux host needs to support the version of CUDA that we are trying to build (we can see the supported CUDA version and driver version information when running the `nvidia-smi` command)
-
-Pre-built images are available for download on Infotrend's DockerHub (at https://hub.docker.com/r/infotrend/). 
-Those are built using the same method provided by the `Makefile` and the corresponding `Dockerfile` used for those builds is stored in the matching `BuildDetails/<release>/<components>-<versions>[<extras>]` folder.
-
 ##  1.1. Tag naming conventions
 
 ```text
@@ -151,7 +137,19 @@ Similarly, `coreai:25a01-ctpo-12.6.3_2.18.1_2.6.0_4.11.0-built-tensorrt`:
   - `-built` for built TensorFlow/PyTorch, 
   - `-tensorrt` for TensorRT support.
 
-## 1.2. Building
+#  2. Building
+
+The base for those container images is pulled from Dockerhub's official `ubuntu:24.04` or `nvidia/cuda:[...]-devel-ubuntu24.04` images. 
+
+More details on the Nvidia base images are available at https://hub.docker.com/r/nvidia/cuda/
+In particular, please note that **By downloading these images, you agree to the terms of the license agreements for NVIDIA software included in the images**; with further details on DockerHub version from https://docs.nvidia.com/cuda/eula/index.html#attachment-a
+
+For GPU-optimized versions, we recommend building on a host with the supported hardware.
+Using a GPU requires the installation of the NVIDIA Container Toolkit found at https://github.com/NVIDIA/nvidia-container-toolkit
+Note that the NVIDIA video driver on the Linux host needs to support the version of CUDA that we are trying to build (we can see the supported CUDA version and driver version information when running the `nvidia-smi` command)
+
+Pre-built images are available for download on Infotrend's DockerHub (at https://hub.docker.com/r/infotrend/). 
+Those are built using the same method provided by the `Makefile` and the corresponding `Dockerfile` used for those builds is stored in the matching `BuildDetails/<release>/<components>-<versions>[<extras>]` folder.
 
 There are two possible methods to build local containers:
 1. when building multiple versions of the container or to have a dedicated Docker `buildx` builder used; we recommend using the `Makefile`
@@ -161,7 +159,7 @@ When using the `Makefile` method: we will use the `make` command to generate the
 
 When using the `BuildDetails/<release>/<components>-<versions>[<extras>]/Dockerfile` method: we can build the container using the files within that directory.
 
-### 1.2.1. A note on build: time & space
+## 2.1. Foreword: time & space
 
 Building the containers requires the docker build step to have internet access. The process is CPU, RAM and storage space intensive and will require storage space for the build step and for the final image (the largest image is about 40GB, close to 100GB of reclaimable space is generated by Docker `buildx`)
 
@@ -182,7 +180,9 @@ For example, when building the `25a01` release, the following is a table generat
 The build time is estimated from local builds of all listed containers on a system with an AMD 5950x (16-cores, `NUMPROC=32`), NVIDIA RTX 4090 and 128GB of RAM. 
 Your build time may vary. but those values provide some idea of scale and time complexities of the build process.
 
-###  1.2.2. Building (using Makefile)
+## 2.2. Building methods
+
+###  2.2.1. Using Makefile
 
 When building multiple versions of the container or to have a dedicated Docker `buildx` builder used; we recommend using the `Makefile`.
 This method will generate a build specific `Dockerfile` 
@@ -245,7 +245,7 @@ In addition to the `Dockerfile`, the `make` method will copy required components
 
 Note: Local builds will not have the `infotrend/` added to their base name as those are only for release to Docker hub by maintainers.
 
-###  1.2.3. Building (using Dockerfile)
+###  2.2.2. Using Dockerfile
 
 As detailled in the previous section, each time we request a specific `make` target, a dedicated `Dockerfile` is built in the `BuildDetails/<release>/<components>-<versions>[<extras>]` folder.
 
@@ -271,7 +271,13 @@ For example, to build the `BuildDetails/25a01/25a01-po-2.6.0_4.11.0/Dockerfile` 
 The `Makefile` contains most of the variables that define the versions of the different frameworks.
 The file has many comments that allow developers to tailor the build.
 
-##  1.3. Available builds on DockerHub
+##  2.3. Build Details
+
+The [`README-BuildDetails.md`](README-BuildDetails.md) file is built automatically from the content of the `BuildDetails` directory and contains links to different files stored in each sub-directory.
+
+It reflects each build's detailed information, such as (where relevant) the Docker tag, version of CUDA, cuDNN, TensorFlow, PyTorch, OpenCV, FFmpeg and Ubuntu. Most content also links to sub-files that contain further insight into the system package, enabled build parameters, etc.
+
+##  2.4. Available builds on DockerHub
 
 The `Dockerfile` used for a Dockerhub pushed built is shared in the `BuildDetails` directory.
 Only builds that are not `-built` or `-tensorrt` are available on Dockerhub.
@@ -286,15 +292,10 @@ The tag naming reflects the [Tag naming conventions](#Tagnamingconventions) sect
 The different base container images that can be found there are all in the https://hub.docker.com/r/infotrend/coreai repository.
 The tag naming convention is the same as the one used in the [Tag naming conventions](#Tagnamingconventions) section above.
 
-##  1.4. Build Details
 
-The [`README-BuildDetails.md`](README-BuildDetails.md) file is built automatically from the content of the `BuildDetails` directory and contains links to different files stored in each sub-directory.
+#  3. FAQ
 
-It reflects each build's detailed information, such as (where relevant) the Docker tag, version of CUDA, cuDNN, TensorFlow, PyTorch, OpenCV, FFmpeg and Ubuntu. Most content also links to sub-files that contain further insight into the system package, enabled build parameters, etc.
-
-#  2. Usage and more
-
-##  2.1. A note on supported GPU in the Docker Hub builds
+##  3.1. A note on supported GPU in the Docker Hub builds
 
 A minimum Nvidia driver version is needed to run the CUDA builds. 
 [Table 1: CUDA Toolkit and Compatible Driver Versions](https://docs.nvidia.com/deploy/cuda-compatibility/index.html#binary-compatibility__table-toolkit-driver) and [Table 2: CUDA Toolkit and Minimum Compatible Driver Versions](https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html) as well as the `nvidia-smi` command on the host will help us determine if a specific version of CUDA will be supported.
@@ -305,103 +306,27 @@ The containers are built for "compute capability (version)" (as defined in the [
 If you need a different GPU compute capability, we can edit the `Makefile` and alter the various `DNN_ARCH_` matching the one that we need to build and add the needed architecture. Then type `make` to see the entire list of containers that the release we have obtained can build and use the exact tag that we want to build to build it locally (on Ubuntu, we will need `docker` and `build-essential` installed --at least-- to do this). 
 Building a container image takes a lot of CPU and can take multiple hours, so we recommend to build only the target needed.
 
-##  2.2. Using the container images
-
-Build or obtain the container image required from DockerHub.
-
-We understand the image names are verbose. This is to avoid confusion between the different builds.
-It is possible to `tag` containers with shorter names for easy `docker run`.
-
-The `WORKDIR` for the containers is set as `/iti`, as such, to map the current working directory within the container and test functions, we can `-v` as `/iti`.
-
-When using a GPU image, make sure to add `--gpus all` to the `docker run` command line.
-
-For example to run the GPU-Jupyter container and expose the WebUI to port 8765, one would:
-```
-% docker run --rm -v `pwd`:/iti --gpus all -p 8765:8888 infotrend/CoreAI-jupyter-cuda_tensorflow_pytorch_opencv:11.8.0_2.12.0_2.0.1_4.7.0-20231120
-```
-By going to http://localhost:8765 we will be shown the Jupyter `Log in` page. As a reminder, the default token is `iti`.
-After log in, we will see the Jupyter Lab interface and the list of files mounted in `/iti` in the interface.
-From that WebUI, using `File -> Shutdown` will exit the container.
-
-The non-Jupyter containers are set to provide the end users with a `bash`.
-`pwd`-mounting the `/iti` directory to a directory where the developer has some code for testing enables the setup of a quick prototyping/testing container-based environment. 
-For example to run some of the content of the `test` directory on a CPU, in the directory where this `README.md` is located:
-```bash
-% docker run --rm -it -v `pwd`:/iti infotrend/CoreAI-tensorflow_opencv:2.12.0_4.7.0-20231120
-      [this starts the container in interactive mode and we can type command in the provided shell]
-root@b859b8aced9c:/iti# python3 ./test/tf_test.py
-Tensorflow test: CPU only
-
-On CPU:
-tf.Tensor(
-[[22. 28.]
- [49. 64.]], shape=(2, 2), dtype=float32)
-
-Time (s) to convolve 32x7x7x3 filter over random 100x100x100x3 images (batch x height x width x channel). Sum of ten runs.
-CPU (s): 0.483618629979901
-Tensorflow test: Done
-```
-
-Note that the base container runs as `root`.
-To run it as a non-root user, add `-u $(id -u):$(id -g)` to the `docker` command line and ensure access to the directories we will work in.
-
-##  2.3. Podman usage
-
-The built image is compatible with other GPU-compatible container runtimes, such as [`podman`](https://podman.io/).
-
-Follow the instructions to install the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) and [Support for Container Device Interface](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/cdi-support.html). 
-
-We will need a version of `podman` above 4.1.0 to be able to:
-
-```bash
-% podman run -it --rm --device nvidia.com/gpu=all infotrend/CoreAI-cuda_tensorflow_pytorch_opencv:latest
-
-root@2b8d77a97c5b:/iti# python3 /iti/test/pt_test.py 
-Tensorflow test: GPU found
-On cpu:
-[...]
-On cuda:
-[...]
-
-root@2b8d77a97c5b:/iti# touch file
-```
-, that last command will create a `file` owned by the person who started the container.
-
-> ℹ️ On Ubuntu 22.04, install [HomeBrew](https://brew.sh/) and `brew install podman`, which at the time of this writeup provided version 4.8.2
-
-##  2.4. docker compose
+##  3.2. docker compose
 
 It is also possible to run the container in `docker compose`.
+It is recommended to start the Jupyter endpoint in such cases.
 
 Follow the [GPU support](https://docs.docker.com/compose/gpu-support/) instructions to match the usage, and adapt the following `compose.yml` example as needed:
 
-```yaml
-version: "3.8"
-services:
-  jupyter_CoreAI:
-    container_name: jupyter_CoreAI
-    image: infotrend/CoreAI-jupyter-cuda_tensorflow_pytorch_opencv:latest
-    restart: unless-stopped
-    ports:
-      - 8888:8888
-    volumes:
-      - ./iti:/iti
-      - ./home:/home/jupyter
-    environment:
-      - TZ="America/New_York"
-      - NVIDIA_VISIBLE_DEVICES=all
-      - NVIDIA_DRIVER_CAPABILITIES=all
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-```
+1. Create the `iti` directory in the location where the `compose.yml` file will be stored as the user running the command
+2. Create the `compose.yml` file in the same location (and adapt the `WANTED_UID` and `WANTED_GID` values)
+3. Start the stack using `docker compose -f compose.yml up -d`
 
-## 2.5. virtualenv for shared Jupyter Lab usage
+An example [`compose.yml`](assets/compose.yml) file is available in the [assets](assets) directory.
+
+## 3.3. Unraid
+
+The container is ready to be added to [Unraid](https://unraid.net/)'s Community Applications.
+We will update this section when the container is added.
+
+In the meanwhile, you can find a [Infotrend-CoreAI.xml](assets/Infotrend-CoreAI.xml) file in the [assets](assets) directory.
+
+## 3.4. virtualenv for shared Jupyter Lab usage
 
 When using the Jupyter version of CoreAI with other users, it might be better to use a `virtualenv` for the packages to be installed in. 
 In the following, we will create a `myvenv` virtual environment in the `/iti` directory, that will show up in the list of available kernels.
@@ -418,10 +343,10 @@ python -m ipykernel install --user --name=myvenv --name=myvenv --display-name="P
 Make sure to select the proper kernel in the notebook.
 When using this kernel, it is still recommendeded to run any `pip` command from the terminal with the virtual environment activated to ensure the packages are installed in the expected location (i.e. not a global installation). As an alternative for `pip` commands to run with the proper installation directory, we will need to use `! . ./myvenv/bin/activate` before the command. For example: `!. ./myvenv/bin/activate; pip install -r requirements.txt` 
 
-## 2.6. Disabling GPUs when nvidia is the default Docker runtime
+## 3.5. Disabling GPUs when nvidia is the default Docker runtime
 
 If `"default-runtime": "nvidia"` in set in `/etc/docker/daemon.json` and want to hide the GPUs from a running container, add `NVIDIA_VISIBLE_DEVICES=void` before the `docker run` command.
 
-# 3. Version History
+# 4. Version History
 
-
+ - 25a01: Initial release (20250408) -- CUDA 12.6.3, Ubuntu 24.04, PyTorch 2.6.0, TensorFlow 2.18.1, OpenCV 4.11.0
