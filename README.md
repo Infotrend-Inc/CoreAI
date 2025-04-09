@@ -27,6 +27,8 @@ We have published examples of use of the tool to support efforts in Computer Vis
 
 Go to https://github.com/Infotrend-Inc/CoreAI-DemoProjects for details.
 
+[![Word Cloud](assets/wordcloud.png)](https://raw.githubusercontent.com/Infotrend-Inc/CoreAI/refs/heads/main/assets/wordcloud_gen.py)
+
 - [1. Container Usage](#1-container-usage)
   - [1.1. Tag naming conventions](#11-tag-naming-conventions)
 - [2. Building](#2-building)
