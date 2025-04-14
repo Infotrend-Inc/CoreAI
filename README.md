@@ -308,13 +308,11 @@ Building a container image takes a lot of CPU and can take multiple hours, so we
 It is also possible to run the container in `docker compose`.
 It is recommended to start the Jupyter endpoint in such cases.
 
-Follow the [GPU support](https://docs.docker.com/compose/gpu-support/) instructions to match the usage, and adapt the following `compose.yml` example as needed:
+Follow the [GPU support](https://docs.docker.com/compose/gpu-support/) instructions to match the usage, and adapt the example [`compose.yaml`](assets/compose.yaml) available in the [`assets`](assets) directory) as needed:
 
-1. Create the `iti` directory in the location where the `compose.yml` file will be stored as the user running the command
-2. Create the `compose.yml` file in the same location (and adapt the `WANTED_UID` and `WANTED_GID` values)
-3. Start the stack using `docker compose -f compose.yml up -d`
-
-An example [`compose.yml`](assets/compose.yml) file is available in the [assets](assets) directory.
+1. Create the `iti` directory in the location where the `compose.yaml` file will be stored as the user running the command
+2. Create the `compose.yaml` file in the same location (and adapt the `WANTED_UID` and `WANTED_GID` values)
+3. Start the stack using `docker compose -f compose.yaml up -d`
 
 ## 3.3. Unraid
 
