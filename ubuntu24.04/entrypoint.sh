@@ -15,6 +15,17 @@ ok_exit() {
   exit 0
 }
 
+# Load config (must have at least ENV_IGNORELIST and ENV_OBFUSCATE_PART set)
+it=/coreai_config.sh
+if [ -f $it ]; then
+  source $it || error_exit "Failed to load config: $it"
+else
+  error_exit "Failed to load config: $it not found"
+fi
+# Check for ENV_IGNORELIST and ENV_OBFUSCATE_PART
+if [ -z "${ENV_IGNORELIST+x}" ]; then error_exit "ENV_IGNORELIST not set"; fi
+if [ -z "${ENV_OBFUSCATE_PART+x}" ]; then error_exit "ENV_OBFUSCATE_PART not set"; fi
+
 # everyone can read our files by default
 umask 0022
 
@@ -45,29 +56,39 @@ save_env() {
 load_env() {
   tocheck=$1
   overwrite_if_different=$2
-  ignorelist="HOME PWD USER SHLVL TERM OLDPWD SHELL _ SUDO_COMMAND HOSTNAME LOGNAME MAIL SUDO_GID SUDO_UID SUDO_USER"
+  ignore_list="${ENV_IGNORELIST}"
+  obfuscate_part="${ENV_OBFUSCATE_PART}"
   if [ -f "$tocheck" ]; then
-    verb_echo "-- Loading environment variables from $tocheck (overwrite existing: $overwrite_if_different) (ignorelist: $ignorelist)"
+    echo "-- Loading environment variables from $tocheck (overwrite existing: $overwrite_if_different) (ignorelist: $ignore_list) (obfuscate: $obfuscate_part)"
     while IFS='=' read -r key value; do
       doit=false
       # checking if the key is in the ignorelist
-      for i in $ignorelist; do
-        if [ "A$key" = "A$i" ]; then doit=ignore; break; fi
+      for i in $ignore_list; do
+        if [[ "A$key" ==  "A$i" ]]; then doit=ignore; break; fi
       done
-      if [ "A$doit" = "Aignore" ]; then continue; fi
+      if [[ "A$doit" == "Aignore" ]]; then continue; fi
+      rvalue=$value
+      # checking if part of the key is in the obfuscate list
+      doobs=false
+      for i in $obfuscate_part; do
+        if [[ "A$key" == *"$i"* ]]; then doobs=obfuscate; break; fi
+      done
+      if [[ "A$doobs" == "Aobfuscate" ]]; then rvalue="**OBFUSCATED**"; fi
 
       if [ -z "${!key}" ]; then
-        verb_echo "  ++ Setting environment variable $key [$value]"
+        echo "  ++ Setting environment variable $key [$rvalue]"
         doit=true
       elif [ "$overwrite_if_different" = true ]; then
-        if [ "${!key}" != "$value" ]; then
-          verb_echo "  @@ Overwriting environment variable $key [${!key}] -> [$value]"
+        cvalue="${!key}"
+        if [[ "A${doobs}" == "Aobfuscate" ]]; then cvalue="**OBFUSCATED**"; fi
+        if [[ "A${!key}" != "A${value}" ]]; then
+          echo "  @@ Overwriting environment variable $key [$cvalue] -> [$rvalue]"
           doit=true
         else
-          verb_echo "  == Environment variable $key [$value] already set and value is unchanged"
+          echo "  == Environment variable $key [$rvalue] already set and value is unchanged"
         fi
       fi
-      if [ "$doit" = true ]; then
+      if [[ "A$doit" == "Atrue" ]]; then
         export "$key=$value"
       fi
     done < "$tocheck"
