@@ -225,7 +225,8 @@ RUN mkdir /iti \
 
 COPY entrypoint.sh /entrypoint.sh
 COPY run_jupyter.sh /run_jupyter.sh
-RUN chmod 755 /entrypoint.sh /run_jupyter.sh
+COPY config.sh /coreai_config.sh
+RUN chmod 755 /entrypoint.sh /run_jupyter.sh /coreai_config.sh
 
 EXPOSE 8888
 

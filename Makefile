@@ -6,7 +6,7 @@ SHELL := /bin/bash
 CoreAI_BASENAME="coreai"
 
 # Release to match data of Dockerfile and follow YY + Alpha (lowercase, version number for that year) + Revision (number) pattern
-CoreAI_RELEASE=25a01
+CoreAI_RELEASE=25b01
 BUILDX_RELEASE=${CoreAI_RELEASE}
 # Attempt to use cache for the buildx images, change value to create clean buildx base
 
@@ -71,7 +71,7 @@ CoreAI_FFMPEG_NVCODEC="12.2.72.0"
 # According to https://github.com/tensorflow/tensorflow/tags
 # Known working CUDA & CUDNN base version https://www.tensorflow.org/install/source#gpu
 # Find OS specific libcudnn file from https://developer.download.nvidia.com/compute/redist/cudnn/
-STABLE_TF2=2.18.1
+STABLE_TF2=2.19.0
 
 CLANG_VERSION=17
 
@@ -255,6 +255,7 @@ build_prep:
 		--copyfile=tools/withincontainer_checker.sh \
 		--copyfile=ubuntu24.04/entrypoint.sh \
 		--copyfile=ubuntu24.04/run_jupyter.sh \
+		--copyfile=ubuntu24.04/config.sh \
 	&& sync
 
 	@while [ ! -f ${BUILD_DESTDIR}/env.txt ]; do sleep 1; done
