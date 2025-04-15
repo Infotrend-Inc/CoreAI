@@ -223,7 +223,7 @@ build_log_check:
 
 ##
 check_builddir:
-	@expected_files="BuildInfo.txt  Dockerfile  entrypoint.sh  FFmpeg--Details.txt  OpenCV--Details.txt  PyTorch--Details.txt  run_jupyter.sh  System--Details.txt  TensorFlow--Details.txt  withincontainer_checker.sh"; \
+	@expected_files="BuildInfo.txt  Dockerfile  entrypoint.sh  config.sh  FFmpeg--Details.txt  OpenCV--Details.txt  PyTorch--Details.txt  run_jupyter.sh  System--Details.txt  TensorFlow--Details.txt  withincontainer_checker.sh"; \
 	for file in $${expected_files}; do \
 		if [ ! -f ${BUILD_DESTDIR}/$$file ]; then \
 			echo "  !! Missing file: ${BUILD_DESTDIR}/$$file -- consider removing the ${CoreAI_FULLNAME}.log file to force rebuild"; \
