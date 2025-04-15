@@ -13,20 +13,24 @@ export ENV_IGNORELIST="HOME PWD USER SHLVL TERM OLDPWD SHELL _ SUDO_COMMAND HOST
 # Obfuscate part: part of the key to obfuscate when loading environment variables from user to user, ex: HF_TOKEN, ...
 export ENV_OBFUSCATE_PART="TOKEN API KEY"
 
-########## Command line variables
+##### Command line variables
 # Uncomment and set as preferred, see README.md for more details
 
-# User and group id
+## User and group id
 #export WANTED_UID=1000
 #export WANTED_GID=1000
 # DO NOT use `id -u` or `id -g` to set the values, use the actual values -- the script is started by coreaitoo with 1025/1025
 
-## NVIDIA specific adds
+## Verbose mode
+# uncomment is enough to enable
+#export CoreAI_VERBOSE="yes"
+
+##### NVIDIA specific adds
 #export NVIDIA_VISIBLE_DEVICES=all
 #export NVIDIA_DRIVER_CAPABILITIES=all
 #export NVCC_APPEND_FLAGS='-allow-unsupported-compiler'
 
-## User settings
+##### User settings
 # If adding content to be obfuscated, add it to ENV_OBFUSCATE_PART
 #export HF_TOKEN=""
 #export OPENAI_API_KEY=""
