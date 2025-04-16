@@ -1,0 +1,128 @@
+  CoreAI_FROM               : nvidia/cuda:12.6.3-devel-ubuntu24.04
+cd BuildDetails/25b01/ctpo-12.6.3_2.19.0_2.6.0_4.11.0-built
+docker buildx ls | grep -q CoreAI-25b01_builder && echo "builder already exists -- to delete it, use: docker buildx rm CoreAI-25b01_builder" || docker buildx create --name CoreAI-25b01_builder --driver-opt env.BUILDKIT_STEP_LOG_MAX_SIZE=256000000
+docker buildx use CoreAI-25b01_builder || exit 1
+BUILDX_EXPERIMENTAL=1  docker buildx debug --on=error build --progress plain --platform linux/amd64  \
+  --build-arg CoreAI_NUMPROC="32" \
+  --tag="coreai:25b01-ctpo-12.6.3_2.19.0_2.6.0_4.11.0-built" \
+  -f Dockerfile \
+  --load \
+  .
+
+
+***** TensorFlow configuration:
+--- Tensorflow Build: Environment variables set --- 
+TF_CUDA_CLANG=1
+TF_CUDA_COMPUTE_CAPABILITIES=6.0,6.1,7.0,7.5,8.0,8.6,8.9,9.0
+TF_NEED_AWS=0
+TF_NEED_CLANG=1
+TF_NEED_COMPUTECPP=0
+TF_NEED_CUDA=1
+TF_NEED_GCP=0
+TF_NEED_GDR=0
+TF_NEED_HDFS=0
+TF_NEED_JEMALLOC=0
+TF_NEED_KAFKA=0
+TF_NEED_MKL=1
+TF_NEED_MPI=0
+TF_NEED_OPENCL=0
+TF_NEED_OPENCL_SYCL=0
+TF_NEED_ROCM=0
+TF_NEED_S3=0
+TF_NEED_TENSORRT=0
+TF_NEED_VERBS=0
+TF_SET_ANDROID_WORKSPACE=0
+-- Loading environment variables from /tmp/.CoreAItoo-env (overwrite existing: true) (ignorelist: HOME PWD USER SHLVL TERM OLDPWD SHELL _ SUDO_COMMAND HOSTNAME LOGNAME MAIL SUDO_GID SUDO_UID SUDO_USER ENV_IGNORELIST ENV_OBFUSCATE_PART) (obfuscate: TOKEN API KEY)
+  ++ Setting environment variable CoreAI_BUILD [GPU]
+  ++ Setting environment variable CoreAI_CLANG_VERSION [17]
+  ++ Setting environment variable CoreAI_CUDA_APT []
+  ++ Setting environment variable CoreAI_FFMPEG_NONFREE []
+  ++ Setting environment variable CoreAI_FFMPEG_NVCODEC [12.2.72.0]
+  ++ Setting environment variable CoreAI_FFMPEG_VERSION [7.1.1]
+  ++ Setting environment variable CoreAI_OPENCV_CUDA [-DWITH_CUDA=1 -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda -DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs -DCUDA_FAST_MATH=1 -DWITH_CUBLAS=1 -DWITH_NVCUVENC=0 -DWITH_NVCUVID=0 -DCUDA_ARCH_BIN=6.0,6.1,7.0,7.5,8.0,8.6,8.9,9.0 -DCUDA_ARCH_PTX=6.0,6.1,7.0,7.5,8.0,8.6,8.9,9.0]
+  ++ Setting environment variable CoreAI_OPENCV_NONFREE []
+  ++ Setting environment variable CoreAI_OPENCV_VERSION [4.11.0]
+  ++ Setting environment variable CoreAI_TENSORFLOW_VERSION [2.19.0]
+  ++ Setting environment variable CoreAI_TF_CONFIG [--config=cuda]
+  ++ Setting environment variable CoreAI_TORCH [2.6.0]
+  ++ Setting environment variable CoreAI_TORCHAUDIO [2.6.0]
+  ++ Setting environment variable CoreAI_TORCH_CUDA_ARCH [6.0 6.1 7.0 7.5 8.0 8.6 8.9 9.0+PTX]
+  ++ Setting environment variable CoreAI_TORCHDATA [0.11.0]
+  ++ Setting environment variable CoreAI_TORCHVISION [0.21.0]
+  ++ Setting environment variable CUDA_VERSION [12.6.3]
+  ++ Setting environment variable DEBIAN_FRONTEND [noninteractive]
+  ++ Setting environment variable HERMETIC_CUDA_COMPUTE_CAPABILITIES [6.0,6.1,7.0,7.5,8.0,8.6,8.9,9.0]
+  @@ Overwriting environment variable LANG [C.UTF-8] -> [en_US.utf8]
+  ++ Setting environment variable LATEST_BAZELISK [1.25.0]
+  ++ Setting environment variable LD_LIBRARY_PATH [/usr/local/lib:/usr/local/nvidia/lib:/usr/local/nvidia/lib64]
+  ++ Setting environment variable LIBRARY_PATH [/usr/local/cuda/lib64/stubs]
+  ++ Setting environment variable MESA_D3D12_DEFAULT_ADAPTER_NAME [NVIDIA]
+  ++ Setting environment variable NCCL_VERSION [2.23.4-1]
+  ++ Setting environment variable NVARCH [x86_64]
+  ++ Setting environment variable NV_CUDA_CUDART_DEV_VERSION [12.6.77-1]
+  ++ Setting environment variable NV_CUDA_CUDART_VERSION [12.6.77-1]
+  ++ Setting environment variable NV_CUDA_LIB_VERSION [12.6.3-1]
+  ++ Setting environment variable NV_CUDA_NSIGHT_COMPUTE_DEV_PACKAGE [cuda-nsight-compute-12-6=12.6.3-1]
+  ++ Setting environment variable NV_CUDA_NSIGHT_COMPUTE_VERSION [12.6.3-1]
+  ++ Setting environment variable NV_CUDNN_PACKAGE_DEV [libcudnn9-dev-cuda-12=9.5.1.17-1]
+  ++ Setting environment variable NV_CUDNN_PACKAGE [libcudnn9-cuda-12=9.5.1.17-1]
+  ++ Setting environment variable NV_CUDNN_PACKAGE_NAME [libcudnn9-cuda-12]
+  ++ Setting environment variable NV_CUDNN_VERSION [9.5.1.17-1]
+  ++ Setting environment variable NVIDIA_DRIVER_CAPABILITIES [all]
+  ++ Setting environment variable NVIDIA_PRODUCT_NAME [CUDA]
+  ++ Setting environment variable NVIDIA_REQUIRE_CUDA [cuda>=12.6 brand=unknown,driver>=470,driver<471 brand=grid,driver>=470,driver<471 brand=tesla,driver>=470,driver<471 brand=nvidia,driver>=470,driver<471 brand=quadro,driver>=470,driver<471 brand=quadrortx,driver>=470,driver<471 brand=nvidiartx,driver>=470,driver<471 brand=vapps,driver>=470,driver<471 brand=vpc,driver>=470,driver<471 brand=vcs,driver>=470,driver<471 brand=vws,driver>=470,driver<471 brand=cloudgaming,driver>=470,driver<471 brand=unknown,driver>=535,driver<536 brand=grid,driver>=535,driver<536 brand=tesla,driver>=535,driver<536 brand=nvidia,driver>=535,driver<536 brand=quadro,driver>=535,driver<536 brand=quadrortx,driver>=535,driver<536 brand=nvidiartx,driver>=535,driver<536 brand=vapps,driver>=535,driver<536 brand=vpc,driver>=535,driver<536 brand=vcs,driver>=535,driver<536 brand=vws,driver>=535,driver<536 brand=cloudgaming,driver>=535,driver<536 brand=unknown,driver>=550,driver<551 brand=grid,driver>=550,driver<551 brand=tesla,driver>=550,driver<551 brand=nvidia,driver>=550,driver<551 brand=quadro,driver>=550,driver<551 brand=quadrortx,driver>=550,driver<551 brand=nvidiartx,driver>=550,driver<551 brand=vapps,driver>=550,driver<551 brand=vpc,driver>=550,driver<551 brand=vcs,driver>=550,driver<551 brand=vws,driver>=550,driver<551 brand=cloudgaming,driver>=550,driver<551]
+  ++ Setting environment variable NVIDIA_VISIBLE_DEVICES [all]
+  ++ Setting environment variable NV_LIBCUBLAS_DEV_PACKAGE [libcublas-dev-12-6=12.6.4.1-1]
+  ++ Setting environment variable NV_LIBCUBLAS_DEV_PACKAGE_NAME [libcublas-dev-12-6]
+  ++ Setting environment variable NV_LIBCUBLAS_DEV_VERSION [12.6.4.1-1]
+  ++ Setting environment variable NV_LIBCUBLAS_PACKAGE [libcublas-12-6=12.6.4.1-1]
+  ++ Setting environment variable NV_LIBCUBLAS_PACKAGE_NAME [libcublas-12-6]
+  ++ Setting environment variable NV_LIBCUBLAS_VERSION [12.6.4.1-1]
+  ++ Setting environment variable NV_LIBCUSPARSE_DEV_VERSION [12.5.4.2-1]
+  ++ Setting environment variable NV_LIBCUSPARSE_VERSION [12.5.4.2-1]
+  ++ Setting environment variable NV_LIBNCCL_DEV_PACKAGE [libnccl-dev=2.23.4-1+cuda12.6]
+  ++ Setting environment variable NV_LIBNCCL_DEV_PACKAGE_NAME [libnccl-dev]
+  ++ Setting environment variable NV_LIBNCCL_DEV_PACKAGE_VERSION [2.23.4-1]
+  ++ Setting environment variable NV_LIBNCCL_PACKAGE [libnccl2=2.23.4-1+cuda12.6]
+  ++ Setting environment variable NV_LIBNCCL_PACKAGE_NAME [libnccl2]
+  ++ Setting environment variable NV_LIBNCCL_PACKAGE_VERSION [2.23.4-1]
+  ++ Setting environment variable NV_LIBNPP_DEV_PACKAGE [libnpp-dev-12-6=12.3.1.54-1]
+  ++ Setting environment variable NV_LIBNPP_DEV_VERSION [12.3.1.54-1]
+  ++ Setting environment variable NV_LIBNPP_PACKAGE [libnpp-12-6=12.3.1.54-1]
+  ++ Setting environment variable NV_LIBNPP_VERSION [12.3.1.54-1]
+  ++ Setting environment variable NV_NVML_DEV_VERSION [12.6.77-1]
+  ++ Setting environment variable NV_NVPROF_DEV_PACKAGE [cuda-nvprof-12-6=12.6.80-1]
+  ++ Setting environment variable NV_NVPROF_VERSION [12.6.80-1]
+  ++ Setting environment variable NV_NVTX_VERSION [12.6.77-1]
+  @@ Overwriting environment variable PATH [/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin] -> [/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin]
+  ++ Setting environment variable PIP_ROOT_USER_ACTION [**OBFUSCATED**]
+  ++ Setting environment variable TF_CUDA_CLANG [1]
+  ++ Setting environment variable TF_CUDA_COMPUTE_CAPABILITIES [6.0,6.1,7.0,7.5,8.0,8.6,8.9,9.0]
+  ++ Setting environment variable TF_NEED_AWS [0]
+  ++ Setting environment variable TF_NEED_CLANG [1]
+  ++ Setting environment variable TF_NEED_COMPUTECPP [0]
+  ++ Setting environment variable TF_NEED_CUDA [1]
+  ++ Setting environment variable TF_NEED_GCP [0]
+  ++ Setting environment variable TF_NEED_GDR [0]
+  ++ Setting environment variable TF_NEED_HDFS [0]
+  ++ Setting environment variable TF_NEED_JEMALLOC [0]
+  ++ Setting environment variable TF_NEED_KAFKA [0]
+  ++ Setting environment variable TF_NEED_MKL [1]
+  ++ Setting environment variable TF_NEED_MPI [0]
+  ++ Setting environment variable TF_NEED_OPENCL [0]
+  ++ Setting environment variable TF_NEED_OPENCL_SYCL [0]
+  ++ Setting environment variable TF_NEED_ROCM [0]
+  ++ Setting environment variable TF_NEED_S3 [0]
+  ++ Setting environment variable TF_NEED_TENSORRT [0]
+  ++ Setting environment variable TF_NEED_VERBS [0]
+  ++ Setting environment variable TF_SET_ANDROID_WORKSPACE [0]
+
+*** Tensorflow version   :  2.19.0
+*** TF Builf with cuda   :  True
+*** TF compile flags     :  ['-I/usr/local/lib/python3.12/dist-packages/tensorflow/include', '-D_GLIBCXX_USE_CXX11_ABI=1', '--std=c++17', '-DEIGEN_MAX_ALIGN_BYTES=64']
+*** TF include           :  /usr/local/lib/python3.12/dist-packages/tensorflow/include
+*** TF lib               :  /usr/local/lib/python3.12/dist-packages/tensorflow
+*** TF link flags        :  ['-L/usr/local/lib/python3.12/dist-packages/tensorflow', '-l:libtensorflow_framework.so.2']
+*** Keras version        :  3.9.2
+*** pandas version       :  2.2.3
+*** scikit-learn version :  1.6.1

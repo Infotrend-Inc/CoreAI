@@ -146,7 +146,7 @@ The `/coreai_config.sh` is a file that can be mounted within the container and c
 Copy and adapt the `config.sh` file found in the corresponding `BuildDetails` directory to create your own configuration file, uncommenting each section and setting their appropriate values. Then it is possible to run something similar to:
 
 ```bash
-docker run -it --runtime nvidia --gpus all -v `pwd`/config.sh:/coreai_config.sh -v `pwd`/run:/run -p 8188:8188 infotrend/coreai:<BUILD>
+docker run -it --runtime nvidia --gpus all -v `pwd`/config.sh:/coreai_config.sh -v `pwd`/iti:/iti -p 8188:8188 infotrend/coreai:<BUILD>
 ```
 , adapting `<BUILD>` to the tag you want to use.
 This is a variation of the same command as before, but without any `-e` options (`WANTED_UID`, `WANTED_GID` are set in the config file)
@@ -364,4 +364,5 @@ If `"default-runtime": "nvidia"` in set in `/etc/docker/daemon.json` and want to
 
 # 4. Version History
 
+ - 25b01: Initial release (20250416) -- CUDA 12.6.3, Ubuntu 24.04, PyTorch 2.6.0, TensorFlow 2.19.0, OpenCV 4.11.0
  - 25a01: Initial release (20250408) -- CUDA 12.6.3, Ubuntu 24.04, PyTorch 2.6.0, TensorFlow 2.18.1, OpenCV 4.11.0
