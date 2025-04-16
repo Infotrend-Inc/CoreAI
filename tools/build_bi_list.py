@@ -94,8 +94,8 @@ def get_dir_list(dir):
     dir_list = []
     check_dir_exists(dir)
     dir_list = [d for d in os.listdir(dir) if os.path.isdir(os.path.join(dir, d))]
-    # remove any directory ending in "-built"
-    dir_list = [d for d in dir_list if not d.endswith("-built")]
+    # remove any directory containing "-built"
+    dir_list = [d for d in dir_list if "-built" not in d]
 #    print(f" -- Found {len(dir_list)} directories in {dir}")
     return dir_list
 

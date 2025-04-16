@@ -1,0 +1,86 @@
+  CoreAI_FROM               : ubuntu:24.04
+cd BuildDetails/25b01/tpo-2.19.0_2.6.0_4.11.0-built
+docker buildx ls | grep -q CoreAI-25b01_builder && echo "builder already exists -- to delete it, use: docker buildx rm CoreAI-25b01_builder" || docker buildx create --name CoreAI-25b01_builder --driver-opt env.BUILDKIT_STEP_LOG_MAX_SIZE=256000000
+docker buildx use CoreAI-25b01_builder || exit 1
+BUILDX_EXPERIMENTAL=1 NVIDIA_VISIBLE_DEVICES=void docker buildx debug --on=error build --progress plain --platform linux/amd64  \
+  --build-arg CoreAI_NUMPROC="32" \
+  --tag="coreai:25b01-tpo-2.19.0_2.6.0_4.11.0-built" \
+  -f Dockerfile \
+  --load \
+  .
+
+
+***** TensorFlow configuration:
+--- Tensorflow Build: Environment variables set --- 
+TF_CUDA_CLANG=0
+TF_CUDA_COMPUTE_CAPABILITIES=
+TF_NEED_AWS=0
+TF_NEED_CLANG=1
+TF_NEED_COMPUTECPP=0
+TF_NEED_CUDA=0
+TF_NEED_GCP=0
+TF_NEED_GDR=0
+TF_NEED_HDFS=0
+TF_NEED_JEMALLOC=0
+TF_NEED_KAFKA=0
+TF_NEED_MKL=0
+TF_NEED_MPI=0
+TF_NEED_OPENCL=0
+TF_NEED_OPENCL_SYCL=0
+TF_NEED_ROCM=0
+TF_NEED_S3=0
+TF_NEED_TENSORRT=0
+TF_NEED_VERBS=0
+TF_SET_ANDROID_WORKSPACE=0
+-- Loading environment variables from /tmp/.CoreAItoo-env (overwrite existing: true) (ignorelist: HOME PWD USER SHLVL TERM OLDPWD SHELL _ SUDO_COMMAND HOSTNAME LOGNAME MAIL SUDO_GID SUDO_UID SUDO_USER ENV_IGNORELIST ENV_OBFUSCATE_PART) (obfuscate: TOKEN API KEY)
+  ++ Setting environment variable CoreAI_BUILD [CPU]
+  ++ Setting environment variable CoreAI_CLANG_VERSION [17]
+  ++ Setting environment variable CoreAI_FFMPEG_NONFREE []
+  ++ Setting environment variable CoreAI_FFMPEG_VERSION [7.1.1]
+  ++ Setting environment variable CoreAI_OPENCV_CUDA []
+  ++ Setting environment variable CoreAI_OPENCV_NONFREE []
+  ++ Setting environment variable CoreAI_OPENCV_VERSION [4.11.0]
+  ++ Setting environment variable CoreAI_TENSORFLOW_VERSION [2.19.0]
+  ++ Setting environment variable CoreAI_TF_CONFIG []
+  ++ Setting environment variable CoreAI_TORCH [2.6.0]
+  ++ Setting environment variable CoreAI_TORCHAUDIO [2.6.0]
+  ++ Setting environment variable CoreAI_TORCHDATA [0.11.0]
+  ++ Setting environment variable CoreAI_TORCHVISION [0.21.0]
+  ++ Setting environment variable DEBIAN_FRONTEND [noninteractive]
+  ++ Setting environment variable HERMETIC_CUDA_COMPUTE_CAPABILITIES []
+  @@ Overwriting environment variable LANG [C.UTF-8] -> [en_US.utf8]
+  ++ Setting environment variable LATEST_BAZELISK [1.25.0]
+  ++ Setting environment variable LD_LIBRARY_PATH [/usr/local/lib:]
+  ++ Setting environment variable NVIDIA_VISIBLE_DEVICES [all]
+  @@ Overwriting environment variable PATH [/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin] -> [/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin]
+  ++ Setting environment variable PIP_ROOT_USER_ACTION [**OBFUSCATED**]
+  ++ Setting environment variable TF_CUDA_CLANG [0]
+  ++ Setting environment variable TF_CUDA_COMPUTE_CAPABILITIES []
+  ++ Setting environment variable TF_NEED_AWS [0]
+  ++ Setting environment variable TF_NEED_CLANG [1]
+  ++ Setting environment variable TF_NEED_COMPUTECPP [0]
+  ++ Setting environment variable TF_NEED_CUDA [0]
+  ++ Setting environment variable TF_NEED_GCP [0]
+  ++ Setting environment variable TF_NEED_GDR [0]
+  ++ Setting environment variable TF_NEED_HDFS [0]
+  ++ Setting environment variable TF_NEED_JEMALLOC [0]
+  ++ Setting environment variable TF_NEED_KAFKA [0]
+  ++ Setting environment variable TF_NEED_MKL [0]
+  ++ Setting environment variable TF_NEED_MPI [0]
+  ++ Setting environment variable TF_NEED_OPENCL [0]
+  ++ Setting environment variable TF_NEED_OPENCL_SYCL [0]
+  ++ Setting environment variable TF_NEED_ROCM [0]
+  ++ Setting environment variable TF_NEED_S3 [0]
+  ++ Setting environment variable TF_NEED_TENSORRT [0]
+  ++ Setting environment variable TF_NEED_VERBS [0]
+  ++ Setting environment variable TF_SET_ANDROID_WORKSPACE [0]
+
+*** Tensorflow version   :  2.19.0
+*** TF Builf with cuda   :  False
+*** TF compile flags     :  ['-I/usr/local/lib/python3.12/dist-packages/tensorflow/include', '-D_GLIBCXX_USE_CXX11_ABI=1', '--std=c++17', '-DEIGEN_MAX_ALIGN_BYTES=64']
+*** TF include           :  /usr/local/lib/python3.12/dist-packages/tensorflow/include
+*** TF lib               :  /usr/local/lib/python3.12/dist-packages/tensorflow
+*** TF link flags        :  ['-L/usr/local/lib/python3.12/dist-packages/tensorflow', '-l:libtensorflow_framework.so.2']
+*** Keras version        :  3.9.2
+*** pandas version       :  2.2.3
+*** scikit-learn version :  1.6.1

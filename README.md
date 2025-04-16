@@ -29,8 +29,10 @@ Go to https://github.com/Infotrend-Inc/CoreAI-DemoProjects for details.
 
 [![Word Cloud](assets/wordcloud.png)](https://raw.githubusercontent.com/Infotrend-Inc/CoreAI/refs/heads/main/assets/wordcloud_gen.py)
 
-- [1. Container Usage](#1-container-usage)
-  - [1.1. Tag naming conventions](#11-tag-naming-conventions)
+- [1. Usage](#1-usage)
+  - [1.1. Running the container](#11-running-the-container)
+  - [1.2. Tag naming conventions](#12-tag-naming-conventions)
+  - [1.3. /coreai\_config.sh](#13-coreai_configsh)
 - [2. Building](#2-building)
   - [2.1. Foreword: time \& space](#21-foreword-time--space)
   - [2.2. Building methods](#22-building-methods)
@@ -63,7 +65,9 @@ Building each container takes resources and time (counted in many cores, GB of m
 
 Note: this tool was built earlier in 2023, iterations of its Jupyter Lab were made available to Infotrend's data scientists, and has been released in the past under different names. **CoreAI** is an evolution of those previous iterations.
 
-# 1. Container Usage
+# 1. Usage
+
+## 1.1. Running the container
 
 Available environment variables:
 - `CoreAI_VERBOSE`: Set to `yes` to enable verbose output (remove the `-e CoreAI_VERBOSE="yes"` from the command line to disable verbose output)
@@ -100,7 +104,7 @@ Decomposing the command lines:
 - `infotrend/coreai:latest`: the image to use, use the tag that matches the build you want to use
 - `/run_jupyter.sh`: the script to run, which exists by default within the container image and will start a Jupyter Lab instance (with an `iti` password). When no script is specified, the container will start a `/bin/bash` session within the new container.
 
-##  1.1. Tag naming conventions
+##  1.2. Tag naming conventions
 
 ```text
 <basename>-<release>-<components>-<versions>[<extras>]
@@ -133,6 +137,22 @@ Similarly, `coreai:25a01-ctpo-12.6.3_2.18.1_2.6.0_4.11.0-built-tensorrt`:
 - `extras` is `-built` and `-tensorrt`:
   - `-built` for built TensorFlow/PyTorch, 
   - `-tensorrt` for TensorRT support.
+
+
+## 1.3. /coreai_config.sh
+
+The `/coreai_config.sh` is a file that can be mounted within the container and can be used to load the entire configuration for the container, instead of setting environment variables on the command line.
+
+Copy and adapt the `config.sh` file found in the corresponding `BuildDetails` directory to create your own configuration file, uncommenting each section and setting their appropriate values. Then it is possible to run something similar to:
+
+```bash
+docker run -it --runtime nvidia --gpus all -v `pwd`/config.sh:/coreai_config.sh -v `pwd`/iti:/iti -p 8188:8188 infotrend/coreai:<BUILD>
+```
+, adapting `<BUILD>` to the tag you want to use.
+This is a variation of the same command as before, but without any `-e` options (`WANTED_UID`, `WANTED_GID` are set in the config file)
+
+Note: the file is loaded AFTER the environment variables set on the command line, so the config file will override any environment variables set on the command line if those are uncommented.
+
 
 #  2. Building
 
@@ -344,4 +364,5 @@ If `"default-runtime": "nvidia"` in set in `/etc/docker/daemon.json` and want to
 
 # 4. Version History
 
+ - 25b01: Initial release (20250416) -- CUDA 12.6.3, Ubuntu 24.04, PyTorch 2.6.0, TensorFlow 2.19.0, OpenCV 4.11.0
  - 25a01: Initial release (20250408) -- CUDA 12.6.3, Ubuntu 24.04, PyTorch 2.6.0, TensorFlow 2.18.1, OpenCV 4.11.0

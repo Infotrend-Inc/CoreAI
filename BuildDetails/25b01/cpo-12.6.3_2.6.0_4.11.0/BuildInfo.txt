@@ -1,0 +1,17 @@
+
+CoreAI_FROM=nvidia/cuda:12.6.3-devel-ubuntu24.04
+CoreAI_BUILD=GPU
+CoreAI_TENSORFLOW_VERSION=None
+CoreAI_PYTORCH_VERSION=2.6.0
+CoreAI_CUDA_VERSION=12.6.3
+CoreAI_OPENCV_VERSION=4.11.0
+CoreAI_RELEASE=25b01
+FOUND_UBUNTU=24.04
+OpenCV_built=4.11.0
+CUDA_found=12.6.85
+cuDNN_found=9.5.1
+FFmpeg_built=7.1.1
+PyTorch_pip=2.6.0+cu126
+TorchVision_pip=0.21.0+cu126
+TorchAudio_pip=2.6.0+cu126
+TorchData_pip=0.11.0+cpu

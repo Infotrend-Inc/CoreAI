@@ -37,8 +37,10 @@ Note:&#xD;
     <Readme>https://github.com/Infotrend-Inc/CoreAI</Readme>
     <Date>2025-04-08</Date>
     <Changes>
+### 25b01
+-CUDA 12.6.3, Ubuntu 24.04, PyTorch 2.6.0, TensorFlow 2.19.0, OpenCV 4.11.0
 ### 25a01
-- Initial release: CUDA 12.6.3, Ubuntu 24.04, PyTorch 2.6.0, TensorFlow 2.18.1, OpenCV 4.11.0
+- CUDA 12.6.3, Ubuntu 24.04, PyTorch 2.6.0, TensorFlow 2.18.1, OpenCV 4.11.0
     </Changes>
     <WebUI>http://[IP]:[PORT:8888]</WebUI>
     <ExtraParams>--runtime nvidia --gpus all</ExtraParams>

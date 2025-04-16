@@ -15,6 +15,9 @@
 # Mac cache
 .DS_Store
 
+# Testing area
+iti/
+
 # Temp
-#BuildDetails/25a01
+#BuildDetails/25b01
 

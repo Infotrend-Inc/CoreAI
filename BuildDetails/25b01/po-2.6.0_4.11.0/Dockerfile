@@ -11,12 +11,12 @@
 # The idea is to have a base Dockerfile that will be tailored to specific builds 
 # so that each build has their own final Dockerfile available for inspection
 
-#==FROM==#
+ARG CoreAI_FROM=ubuntu:24.04
 FROM ${CoreAI_FROM}
 
-#==BOOTSTRAP_NVIDIA==#
+# No CUDA, or no cuDNN bootstrap needed
 
-#==CoreAI_NUMPROC==#
+ARG CoreAI_NUMPROC=32
 
 ##### Base
 
@@ -116,7 +116,12 @@ RUN apt-get install -y \
     x11-apps \
     x264 \
     yasm \
-  #==APT_TORCH==#
+  # Torch
+    libomp-dev \
+    libsox-dev \
+    libsox-fmt-all \
+    libsphinxbase-dev \
+    sphinxbase-utils \
   # FFMpeg (source install, do not install packages: libavcodec-dev libavformat-dev libavresample-dev libavutil-dev libswscale-dev)
     libass-dev \
     libc6 \
@@ -131,14 +136,26 @@ RUN apt-get install -y \
     python3-venv \
   && apt-get clean
 
-#==CoreAI_CUDA_APT==#
+# No Additional CUDA apt installs
 
-#==CoreAI_INSTALL_CLANG==#
 
-#==CoreAI_BUILD==#
+# Not installing clang
+
+
+ENV CoreAI_BUILD=CPU
 RUN touch /tmp/.${CoreAI_BUILD}_build
 
-#==FIX_Misc==#
+# - Avoid "RPC failed; curl 56 GnuTLS" issue on some pulls, while keeping the system installed git
+# - Some tools expect a "python" binary
+# - Prepare ldconfig
+RUN git config --global http.postBuffer 1048576000 \
+  && mkdir -p /usr/local/bin && ln -s $(which python3) /usr/local/bin/python \
+  && mkdir -p /usr/local/lib && sh -c 'echo "/usr/local/lib" >> /etc/ld.so.conf.d/usrlocallib.conf' && ldconfig
+
+ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+
+# Not a GPU build, no path fix to test
+
 
 # Setup pip
 ENV PIP_ROOT_USER_ACTION=ignore
@@ -148,7 +165,7 @@ RUN mv /usr/lib/python3.12/EXTERNALLY-MANAGED /usr/lib/python3.12/EXTERNALLY-MAN
   && pip3 --trusted-host pypi.org --trusted-host files.pythonhosted.org install -U pip \
   && rm -rf /tmp/get-pip.py /root/.cache/pip
 
-#==APT_PIP_TENSORRT==#
+# No TensorRT support
 
 # Install Python tools (for buiding) 
 RUN pip3 --trusted-host pypi.org --trusted-host files.pythonhosted.org install -U --ignore-installed \
@@ -169,7 +186,10 @@ RUN pip3 --trusted-host pypi.org --trusted-host files.pythonhosted.org install -
   # OpenCV
     lxml \
     Pillow \
-  #==PIP_TORCH==#
+  # Torch
+    cffi \
+    typing \
+    ninja \
   # Extra
     scikit-image \
     scikit-learn \
@@ -177,16 +197,101 @@ RUN pip3 --trusted-host pypi.org --trusted-host files.pythonhosted.org install -
     moviepy \
     pandas \
     mkl-static mkl-include \
-  #==PIP_KERAS==#
+  # No keras
   && rm -rf /root/.cache/pip
 
-#==BUILD_TensorFlow==#
+# No TensorFlow build
+RUN echo "No TensorFlow built" > /tmp/tf_env.dump
 
-#==BUILD_FFMPEG==#
 
-#==BUILD_OPENCV==#
+##### FFMPEG
 
-#==BUILD_TORCH==#
+ENV CoreAI_FFMPEG_VERSION=7.1.1
+ENV CoreAI_FFMPEG_NONFREE=""
+RUN mkdir -p /usr/local/src/builder \
+  && cd /usr/local/src \
+  && wget -q https://ffmpeg.org/releases/ffmpeg-${CoreAI_FFMPEG_VERSION}.tar.gz -O - | tar --strip-components=1 -xz -C /usr/local/src/builder \
+  && cd /usr/local/src/builder \
+  && time ./configure --enable-shared --disable-static --enable-gpl --enable-libv4l2 --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libxvid --enable-libopus --enable-pic --enable-libass --enable-libx264 --enable-libx265 | tee /tmp/ffmpeg_config.txt \
+  && make -j${CoreAI_NUMPROC} install \
+  && ldconfig \
+  && rm -rf /usr/local/src/builder
+
+RUN echo "${CoreAI_FFMPEG_VERSION}" > /tmp/.ffmpeg_built
+
+#### OpenCV
+
+# Download & Build OpenCV in same RUN
+## FYI: We are removing the OpenCV source and build directory in /usr/local/src to attempt to save additional disk space
+# Comment the last line if you want to rerun cmake with additional/modified options. For example:
+# cd /usr/local/src/opencv/build
+# cmake -DOPENCV_ENABLE_NONFREE=ON -DBUILD_EXAMPLES=ON -DBUILD_DOCS=ON -DBUILD_TESTS=ON -DBUILD_PERF_TESTS=ON .. && make install
+ENV CoreAI_OPENCV_VERSION=4.11.0
+ENV CoreAI_OPENCV_CUDA=""
+ENV CoreAI_OPENCV_NONFREE=""
+RUN mkdir -p /usr/local/src/opencv/build /usr/local/src/opencv_contrib \
+  && cd /usr/local/src \
+  && wget -q https://github.com/opencv/opencv/archive/${CoreAI_OPENCV_VERSION}.tar.gz -O - | tar --strip-components=1 -xz -C /usr/local/src/opencv \
+  && wget -q https://github.com/opencv/opencv_contrib/archive/${CoreAI_OPENCV_VERSION}.tar.gz -O - | tar --strip-components=1 -xz -C /usr/local/src/opencv_contrib \
+  && cd /usr/local/src/opencv/build \
+  && time cmake \
+    -DBUILD_DOCS=0 \
+    -DBUILD_EXAMPLES=0 \
+    -DBUILD_PERF_TESTS=0 \
+    -DBUILD_TESTS=0 \
+    -DBUILD_opencv_python2=0 \
+    -DBUILD_opencv_python3=1 \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=$(python3 -c "import sys; print(sys.prefix)") \
+    -DOPENCV_PYTHON3_INSTALL_PATH=$(python3 -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())") \
+    -DPYTHON_EXECUTABLE=$(which python3) \
+    -DCMAKE_INSTALL_TYPE=Release \
+    -DENABLE_FAST_MATH=1 \
+    -DFORCE_VTK=1 \
+    -DINSTALL_C_EXAMPLES=0 \
+    -DINSTALL_PYTHON_EXAMPLES=0 \
+    -DOPENCV_EXTRA_MODULES_PATH=/usr/local/src/opencv_contrib/modules \
+    -DOPENCV_GENERATE_PKGCONFIG=1 \
+    -DOPENCV_PC_FILE_NAME=opencv.pc \
+    -DWITH_CSTRIPES=1 \
+    -DWITH_EIGEN=1 \
+    -DWITH_GDAL=1 \
+    -DWITH_GSTREAMER=1 \
+    -DWITH_GSTREAMER_0_10=OFF \
+    -DWITH_GTK=1 \
+    -DWITH_IPP=1 \
+    -DWITH_OPENCL=1 \
+    -DWITH_OPENMP=1 \
+    -DWITH_TBB=1 \
+    -DWITH_V4L=1 \
+    -DWITH_WEBP=1 \
+    -DWITH_XINE=1 \
+    ${CoreAI_OPENCV_CUDA} \
+    ${CoreAI_OPENCV_NONFREE} \
+    -GNinja \
+    .. \
+  && time ninja install \
+  && ldconfig \
+  && rm -rf /usr/local/src/opencv /usr/local/src/opencv_contrib
+
+RUN python3 -c 'import cv2; print(f"{cv2.__version__}")' > /tmp/.opencv_built
+
+##### Torch (using FFMpeg + OpenCV)
+
+ENV CoreAI_TORCH=2.6.0
+ENV CoreAI_TORCHVISION=0.21.0
+ENV CoreAI_TORCHAUDIO=2.6.0
+ENV CoreAI_TORCHDATA=0.11.0
+
+RUN pip3 install --trusted-host pypi.org --trusted-host files.pythonhosted.org torch==${CoreAI_TORCH} torchvision==${CoreAI_TORCHVISION} torchaudio==${CoreAI_TORCHAUDIO} --index-url https://download.pytorch.org/whl/cpu \
+    && pip3 install --trusted-host pypi.org --trusted-host files.pythonhosted.org torchdata==${CoreAI_TORCHDATA} \
+    && rm -rf /root/.cache/pip
+
+RUN echo "--- PyTorch: PIP Installed:" | tee /tmp/torch_config.txt | tee /tmp/torchvision_config.txt | tee /tmp/torchaudio_config.txt | tee /tmp/torchdata_config.txt
+RUN python3 -c 'import torch; print(f"{torch.__version__}")' | tee -a /tmp/torch_config.txt | tee /tmp/.torch_pip
+RUN python3 -c 'import torchvision; print(f"{torchvision.__version__}")' | tee -a /tmp/torchvision_config.txt | tee /tmp/.torchvision_pip
+RUN python3 -c 'import torchaudio; print(f"{torchaudio.__version__}")' | tee -a /tmp/torchaudio_config.txt | tee /tmp/.torchaudio_pip
+RUN python3 -c 'import torchdata; print(f"{torchdata.__version__}")' | tee -a /tmp/torchdata_config.txt | tee /tmp/.torchdata_pip
 
 ##### Final steps
 
