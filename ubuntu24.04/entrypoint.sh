@@ -115,7 +115,7 @@ WANTED_GID=${WANTED_GID:-1024}
 if [ ! -f /tmp/.CoreAI-WANTED_UID ]; then write_worldtmpfile /tmp/.CoreAI-WANTED_UID ${WANTED_UID}; fi
 if [ ! -f /tmp/.CoreAI-WANTED_GID ]; then write_worldtmpfile /tmp/.CoreAI-WANTED_GID ${WANTED_GID}; fi
 
-# Grab command line arguments and placing them in /coreai_run.sh
+# Grab command line arguments and placing them in /tmp/CoreAI-run.sh
 if [ ! -z "$*" ]; then write_worldtmpfile /tmp/CoreAI-run.sh "$*"; fi
 
 # Check user id and group id
