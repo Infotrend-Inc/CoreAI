@@ -3,7 +3,7 @@
 import sys
 import os
 import os.path
-import shutil
+import subprocess
 
 import argparse
 
@@ -297,6 +297,15 @@ def return_BUILD_TORCH(cuda_version, pytorch_version, built, indir, args):
         if cuda_version is not None:
             infile = f"{indir}/PIPInstall_PyTorch.GPU.Dockerfile"
         tmp = slurp_file(infile)
+        if mode == "GPU":
+            torch_wheel = ""
+            if cuda_version.startswith("12.6"):
+                torch_wheel = "cu126"
+            elif cuda_version.startswith("12.8"):
+                torch_wheel = "cu128"
+            if isBlank(torch_wheel):
+                error_exit(f"Unable to determine torch wheel for CUDA version: {cuda_version}")
+            tmp = replace_line(tmp, "ENV CoreAI_TORCH_WHEEL=", f"ENV CoreAI_TORCH_WHEEL={torch_wheel}")            
     else:
         tmp = slurp_file(f"{indir}/BUILD_PyTorch.{mode}.Dockerfile")
         tmp_file = f"{indir}/BUILD_PyTorch.{mode}.{pytorch_version}.Dockerfile"
@@ -516,7 +525,11 @@ def main():
                 print(f"  Copying {f} to {args.destdir}")
             if not os.path.isfile(f):
                 error_exit(f"Error: Copy file {f} does not exist")
-            shutil.copy(f, args.destdir)
+            # use rsync to avoid modifying timestamps
+            subprocess.run(["rsync", "-a", f, args.destdir], check=True)
+            # check destination file exists
+            if not os.path.isfile(os.path.join(args.destdir, os.path.basename(f))):
+                error_exit(f"Error: Copy file {f} failed")
 
     (dockertxt, env) = build_dockerfile(args.input, args.indir, args.release, tensorflow_version, pytorch_version, cuda_version, dnn_used, cudnn_install, opencv_version, tensorrt, built, args.verbose, args)
 
