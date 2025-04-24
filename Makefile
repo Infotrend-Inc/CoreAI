@@ -6,7 +6,7 @@ SHELL := /bin/bash
 CoreAI_BASENAME="coreai"
 
 # Release to match data of Dockerfile and follow YY + Alpha (lowercase, version number for that year) + Revision (number) pattern
-CoreAI_RELEASE=25b01
+CoreAI_RELEASE=25c01
 BUILDX_RELEASE=${CoreAI_RELEASE}
 # Attempt to use cache for the buildx images, change value to create clean buildx base
 
@@ -37,13 +37,9 @@ CKTK_CHECK="yes"
 # According to https://hub.docker.com/r/nvidia/cuda/
 # https://hub.docker.com/r/nvidia/cuda/tags?page=1&name=24.04
 #
-# Note: CUDA11 minimum version has to match the one used by PyTorch
-# From PyTorch: Deprecation of CUDA 11.6 and Python 3.7 Support
-# (from within running container) to get the list of cudnn version available: apt-cache madison cudnn9-cuda-12-4
-#
-# TF will likely not work unless we follow the recongized versions https://www.tensorflow.org/install/source#gpu
-STABLE_CUDA=12.6.3
-STABLE_CUDNN=9.5.1.17-1
+STABLE_CUDA=12.8.1
+STABLE_CUDNN=9.8.0.87-1
+# Latest: https://gitlab.com/nvidia/container-images/cuda/-/blob/master/dist/12.8.1/ubuntu2404/devel/cudnn/Dockerfile
 
 # TensortRT:
 # check available version: apt-cache madison  tensorrt-dev
@@ -52,32 +48,29 @@ TENSORRT="-tensorrt"
 # CUDNN needs 5.3 at minimum, extending list from https://en.wikipedia.org/wiki/CUDA#GPUs_supported 
 # Skipping Tegra, Jetson, ... (ie not desktop/server GPUs) from this list
 # Keeping from Pascal and above
-DNN_ARCH_CUDA=6.0,6.1,7.0,7.5,8.0,8.6,8.9,9.0
+DNN_ARCH_CUDA=6.0,6.1,7.0,7.5,8.0,8.6,8.9,9.0,12.0
 # Torch note on PTX: https://pytorch.org/docs/stable/cpp_extension.html
-DNN_ARCH_TORCH=6.0 6.1 7.0 7.5 8.0 8.6 8.9 9.0+PTX
-# Not building for Blackwell architecture yet
+DNN_ARCH_TORCH=6.0 6.1 7.0 7.5 8.0 8.6 8.9 9.0 12.0+PTX
 
-# According to https://opencv.org/releases/
+# OpenCV -- https://opencv.org/releases/
 STABLE_OPENCV4=4.11.0
 
-# FFmpeg
-# Release list: https://ffmpeg.org/download.html
+# FFmpeg -- https://ffmpeg.org/download.html
 # Note: GPU extensions are added directly in the Dockerfile
 CoreAI_FFMPEG_VERSION=7.1.1
 # https://github.com/FFmpeg/nv-codec-headers/releases
 CoreAI_FFMPEG_NVCODEC="12.2.72.0" 
 
-# TF2 CUDA & CUDNN
-# According to https://github.com/tensorflow/tensorflow/tags
+# TensorFlow -- https://github.com/tensorflow/tensorflow/tags
 # Known working CUDA & CUDNN base version https://www.tensorflow.org/install/source#gpu
 # Find OS specific libcudnn file from https://developer.download.nvidia.com/compute/redist/cudnn/
 STABLE_TF2=2.19.0
 
-CLANG_VERSION=17
+CLANG_VERSION=18
 
 ## Information for build
 # https://github.com/bazelbuild/bazelisk
-LATEST_BAZELISK=1.25.0
+LATEST_BAZELISK=1.26.0
 
 ## PyTorch (with FFmpeg + OpenCV if available) https://pytorch.org/
 # Note: same as FFmpeg, GPU specific selection (including ARCH) are in the Dockerfile
@@ -85,11 +78,11 @@ LATEST_BAZELISK=1.25.0
 # https://pytorch.org/get-started/locally/
 # https://pytorch.org/get-started/pytorch-2.0/#getting-started
 # https://github.com/pytorch/pytorch/releases/tag/v2.0.1
-STABLE_TORCH=2.6.0
+STABLE_TORCH=2.7.0
 # Use release branch https://github.com/pytorch/vision
-CoreAI_TORCHVISION="0.21.0"
+CoreAI_TORCHVISION="0.22.0"
 # then use released branch at https://github.com/pytorch/audio
-CoreAI_TORCHAUDIO="2.6.0"
+CoreAI_TORCHAUDIO="2.7.0"
 # check compatibility from https://github.com/pytorch/data and the release tags
 CoreAI_TORCHDATA="0.11.0"
 # TorchText: "development is stopped"
@@ -281,6 +274,7 @@ build_final_prep:
 	@if [ ! -f ${BUILD_DESTDIR}/env.txt ]; then echo "ERROR: ${BUILD_DESTDIR}/env.txt does not exist, aborting build"; echo ""; exit 1; fi
 	@if [ ! -f ${BUILD_DESTDIR}/Dockerfile ]; then echo "ERROR: ${BUILD_DESTDIR}/Dockerfile does not exist, aborting build"; echo ""; exit 1; fi
 	@if [ "A${CoreAI_BUILD}" == "A" ]; then echo "Missing value for CoreAI_BUILD, aborting"; exit 1; fi
+	@if [ ! -f ${BUILD_DESTDIR}/.dockerignore ]; then echo "*.txt" > ${BUILD_DESTDIR}/.dockerignore; fi
 	@$(eval CHECKED_DOCKER_RUNTIME=$(shell docker info | grep "Default Runtime" | cut -d : -f 2 | tr  -d " "))
 	@$(eval CHECK_DOCKER_RUNTIME=$(shell if [ "A${CHECKED_DOCKER_RUNTIME}" == "Anvidia" ]; then echo "GPU"; else echo "CPU"; fi))
 # GPU docker + CPU build okay using NVIDIA_VISIBLE_DEVICES=void 
